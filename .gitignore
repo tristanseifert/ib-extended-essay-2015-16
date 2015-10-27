@@ -1,1 +1,13 @@
 EE.pdf
+*.aux
+*.bbl
+*.out
+*.bcf
+*.blg
+*.glg
+*.glo
+*.gls
+*.ist
+*.log
+*.xml
+*.toc
