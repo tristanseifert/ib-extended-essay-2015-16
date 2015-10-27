@@ -1,0 +1,151 @@
+% terms
+\newglossaryentry{aliasing} {
+  name=aliasing,
+  description={artefacts caused when sampling textures and performing calculations, often manifested as rough edges}
+}
+
+\newglossaryentry{float} {
+  name={float (\textmd{also} floating point)},
+  text=float,
+  description={system of describing an arbitrary decimal number, rational or irrational, with a high amount of precision; compare to fixed point, where the precision of the fractional and whole components is predetermined}
+}
+
+\newglossaryentry{floating point} {
+	name=floating point,
+	description={\emph{See} \gls{float}}
+}
+
+\newglossaryentry{OpenGL} {
+  name=OpenGL,
+  description={industry standard library used for interfacing with \glspl{graphics accelerator}. Developed by SGI in the 1990s}
+}
+
+\newglossaryentry{graphics accelerator} {
+  name=graphics accelerator,
+  description={a dedicated piece of hardware (usually in the form of a plug-in card or chip) that is optimized to perform many complex calculations in hardware, in parallel}
+}
+
+\newglossaryentry{frame rate} {
+  name=frame rate,
+  description={the rate at which the graphics output of an application (i.e. its frame) is updated}
+}
+
+\newglossaryentry{refresh rate} {
+  name=refresh rate,
+  description={the rate at which the video hardware updates the display: the maximum rate at which the screen can be updated}
+}
+
+\newglossaryentry{memory bandwidth} {
+  name=memory bandwidth,
+  description={the maximum continuous rate at which a \gls{graphics accelerator} can read data from its memory. Usually specified in transfers per second}
+}
+
+\newglossaryentry{shader} {
+  name=shader,
+  description={code that is executed on the GPU, performing a variety of processing tasks for \glspl{texel} to be output. A \gls{GPU} may have hundreds of \glspl{compute unit}, each of which can run a shader over a given set of data}
+}
+
+\newglossaryentry{compute unit} {
+  name=compute unit,
+  description={mathematics processing unit which is used to execute a single \gls{shader} over many  data sets in parallel}
+}
+
+\newglossaryentry{texel} {
+  name=texel,
+  description={a single pixel on a texture, usually identified by either a 2D or a 3D point}
+}
+
+\newglossaryentry{graphics pipeline} {
+  name=graphics pipeline,
+  description={all components of a \gls{GPU} connected end-to-end, going from input data to a \gls{texel} on the screen}
+}
+
+\newglossaryentry{pipeline stall} {
+  name=pipeline stall,
+  description={occurs when a 'bubble' is allowed to enter the \gls{graphics pipeline}: either because the \gls{GPU} must wait on data or calculations, or if a significant state change (such as changing \gls{shader} programs) takes place}
+}
+
+\newglossaryentry{deferred shading} {
+  name=deferred shading,
+  description={technique in which all models are rendered into an intermediary buffer, called the \gls{G Buffer}, before lighting calculations are applied}
+}
+
+\newglossaryentry{G Buffer} {
+  name=geometry buffer,
+  description={a buffer that stores depth, specular highlights, albedo, and surface normals}
+}
+
+\newglossaryentry{hdr-def} {
+  name=high dynamic range,
+  description={technique in which all color values are not limited to a finite display range, but are instead represented as \gls{floating point} values, then normalized into the display range later}
+}
+
+\newglossaryentry{ldr-def} {
+  name=low dynamic range,
+  description={heavily compressed range of colour values that be accurately reproduced by the display device}
+}
+
+\newglossaryentry{bloom} {
+  name=bloom,
+  description={a blur surrounding edges of very brightly lit objects; usually implemented in conjunction with \gls{HDR}}
+}
+
+\newglossaryentry{shadow mapping} {
+  name=shadow mapping,
+  description={a method used to cast shadows, by rendering the scene from the viewpoint of a light source, then transforming the resultant depth when rendering lighting}
+}
+
+\newglossaryentry{ambient occlusion} {
+  name=ambient occlusion,
+  description={technique used to calculate how exposed each particular point in a scene is to ambient lighting}
+}
+
+\newglossaryentry{fxaa-def} {
+  name=fast approximate antialiasing,
+  description={a post-processing technique that reduces sharp edges on objects caused by \gls{aliasing} through edge detection}
+}
+
+\newglossaryentry{depth test} {
+  name=depth test,
+  description={step in the rendering pipeline, where the depth value of a texel is compared to that of a depth buffer to decide whether the texel is drawn or not}
+}
+
+\newglossaryentry{Blinn-Phong reflection model} {
+  name=Blinn-Phong reflection model,
+  description={model that approximates the way in which light is reflected off of a surface in the most realistic way}
+}
+
+\newglossaryentry{skybox} {
+  name=skybox,
+  description={static background that is rendered in areas where no objects are drawn to provide a sense of scale and define the environment}
+}
+
+\newglossaryentry{rgb-def} {
+  name=red green blue,
+  description={the three primary colours used in computer displays to produce any possible colour; also known as additive mixing}
+}
+
+\newglossaryentry{specular} {
+  name=specular,
+  description={bright spots of lights on an object: i.e. the light that is reflected off of an object, based on the angle of the light source relative to the viewer}
+}
+
+\newglossaryentry{diffuse} {
+  name=diffuse,
+  description={solid colour of an object, i.e. light that is reflected off of an object, regardless of the viewer's orientation toward it}
+}
+
+\newglossaryentry{tone mapping} {
+  name=tone mapping,
+  description={process of converting \gls{HDR} colours to display (\gls{RGB}) colours}
+}
+
+\newglossaryentry{white point} {
+  name=white point,
+  description={a vector that describes where in a colour space white is, in essence defining its origin}
+}
+
+\newglossaryentry{Reinhard tone mapping} {
+  name=Reinhard tone mapping,
+  description={\gls{tonemapping} algorithm that evenly spreads out the \gls{LDR} values to \gls{HDR} values, then balancing them}
+}
