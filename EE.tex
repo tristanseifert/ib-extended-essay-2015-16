@@ -1,5 +1,4 @@
 % !BIB program = biber
-% !BIB TS-program = biber
 
 \documentclass[11pt, oneside]{report}
 
@@ -200,7 +199,7 @@ Directional lights are an approximation of light sources that are infinitely far
 Directional lights are the only lights that will cause shadows to be cast.
 
 \subsection{Point Light}
-Point lights are similar to directional lights, except they have a position instead of a direction. Light rays are cast in all directions from this center point, and like directional lights, any \gls{texel} in their path will be affected by it. Instead of a constant effect, however, point lights' influence gets weaker the farther the \gls{texel} is from the light source.
+Point lights are similar to directional lights, except they have a position instead of a direction. Light rays are cast in all directions from this center point, and like directional lights, any \gls{texel} in their path will be affected by it. Instead of a constant effect, however, point lights' influence gets weaker the farther the \gls{texel} is from the light source.\footcite{pointlight-attenuate}	
 
 This attenuation is defined by a constant ($K_c$), a linear ($K_l$) and a quadratic ($K_q$) term, as well as the distance from the light ($d$) and unattenuated intensity ($I$): \begin{equation} F_{att} = \frac{I}{K_c + K_l * d + K_q * d^2} \end{equation}
 
