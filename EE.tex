@@ -6,6 +6,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[parfill]{parskip}
 \usepackage[english]{babel}
+\usepackage{csquotes}
 
 \usepackage{geometry}
 \geometry{letterpaper, margin = 1in, bottom = 1in}
@@ -70,6 +71,19 @@
         stringstyle=\color[rgb]{0.627,0.126,0.941},
 }
 
+% plots
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+
+\definecolor{graph1}{rgb}{0.1, 0.1, 0.1}
+\definecolor{graph2}{rgb}{0.75, 0.75, 0.75}
+\pgfplotscreateplotcyclelist{triangle}{
+	{graph1},
+	{graph2},
+}
+
+\include{include/pie.tex}
+
 % a command to allow text to justify and word-wrap
 \newcommand*\justify{%
 	\fontdimen2\font=0.4em% interword space
@@ -96,7 +110,7 @@
 \makeatother
 
 % set up glossary
-\usepackage[toc, nonumberlist]{glossaries}
+\usepackage[toc, nonumberlist]{glossaries, appendix}
 \makeglossaries
 
 \include{include/glossary/terms}
@@ -121,8 +135,8 @@
 	\vspace{1.5cm}
 	{\Large\itshape Tristan Seifert\par}
 	\vspace{0.33cm}
-	{\large Word Count: 2511\par}
-	\fcolorbox{black}{red}{\Large\itshape {\color{white} \uppercase{Draft Copy}}}
+	{\large Word Count: 3175\par}
+	\fcolorbox{black}{red}{\Large\itshape {\color{white} \textsc{ Draft Copy }}}
 	\vfill
 	
 	IB Candidate Number:\par
@@ -132,6 +146,13 @@
 
 	{\large October 27, 2015 \par}
 \end{titlepage}
+
+% abstract
+{
+	\renewcommand{\addtocontents}[2]{}
+	\chapter*{Abstract}
+}
+blah
 
 % table of contents
 \tableofcontents
@@ -160,7 +181,7 @@ To analyze the effects of various techniques—\gls{deferred shading}, \gls{HDR}
 
 When coupled with debuggers, static and dynamic analyzers, such as Apple's Instruments and \gls{OpenGL} Profiler, very accurate data about the impacts of these techniques on performance can be acquired, down to a breakdown of which line of code takes the longest to execute.
 
-To maintain a constant environment, all tests will be run on the same machine: a mid-2012 MacBook Pro, featuring a 2.3GHz Intel i7, 16GB of RAM, and an NVIDIA GeForce GT 650M, with 512MB of video memory. Additionally, all tests are ran in windowed mode, at a resolution of $1024 \times 768$ pixels, using \gls{OpenGL} version 4.2.
+To maintain a constant environment, all tests will be run on the same machine: a mid-2012 MacBook Pro, featuring a 2.3GHz Intel i7, 16GB of RAM, and an NVIDIA GeForce GT 650M, with 512MB of video memory. Additionally, all tests are ran in windowed mode, at a resolution of $1024 \times 768$ pixels, 32 \gls{bpp}, using \gls{OpenGL} version 4.2.
 
 % where each of the techniques is analyzed 
 \chapter{Deferred Shading}
@@ -175,11 +196,11 @@ The geometry buffer is a collection of distinct buffers: \gls{specular} highligh
 
 \begin{figure}[!htbp]
   \centering
-  \subfloat[Albedo and \gls{specular}]{\includegraphics[width=0.32\textwidth]{images/lighting_gBuf_albedoSpec.png}\label{fig:f1}}
+  \subfloat[Albedo and \gls{specular}]{\includegraphics[width=0.32\textwidth]{images/lighting_gBuf_albedoSpec.png}\label{fig:f11}}
   \hfill
-  \subfloat[Surface normals]{\includegraphics[width=0.32\textwidth]{images/lighting_gBuf_normals.png}\label{fig:f2}}
+  \subfloat[Surface normals]{\includegraphics[width=0.32\textwidth]{images/lighting_gBuf_normals.png}\label{fig:f12}}
   \hfill
-  \subfloat[Depth]{\includegraphics[width=0.32\textwidth]{images/lighting_gBuf_depth.png}\label{fig:f3}}
+  \subfloat[Depth]{\includegraphics[width=0.32\textwidth]{images/lighting_gBuf_depth.png}\label{fig:f13}}
   \caption{Components of the G buffer in the testbed's deferred shading implementation.}
 \end{figure}
 
@@ -215,14 +236,58 @@ When combining all of these lighting types, a good approximation of the real env
    \centering
    \includegraphics[width=0.74\textwidth]{images/lighting_out.png}
    \caption{Output of the lighting stage, without gamma compensation, with values > \texttt{1.0} clipped. A \gls{skybox} was rendered in areas where lighting calculations produced no output.}
-   \label{fig:example}
+   \label{fig:f14}
 \end{figure}
 
-But what about particularly bright lights, or really dark ones? The standard approach to rendering them will cause \glspl{texel} illuminated by them to appear as solid bright or dark areas, losing most detail. \gls{HDR} solves that problem, by having the lighting pass output an intermediate, unbounded representation of light intensity.
+But what about particularly bright lights, or really dark ones? The standard approach to rendering them will cause \glspl{texel} illuminated by them to appear as solid bright or dark areas, losing most detail. \gls{HDR} solves that problem, by having the lighting pass output an intermediate, unbounded representation of light intensity.\footcite{trebilco-deferred}
 
 A downside of deferred shading is that objects that previously affected light in unique ways are more difficult to implement, since all lighting calculations are in the same shader. Additionally, a significant amount of memory is consumed by the \gls{G Buffer}, so it is not uncommon to reuse components of the \gls{G Buffer} for other purposes.
 
-% add some timing information here pls!
+\subsection{Performance Impact}
+By far, deferred shading consumes a significant piece of the frame's processing time. Approximately 9.6\% of the frame processing time goes towards deferred shading. However, compared to the tremendous savings over per-pixel shading, this is still a massive reduction in processing time.
+
+\begin{table}[!htbp]	
+	\centering
+	\footnotesize
+	
+	\definecolor{HeaderGray}{gray}{0.74}
+		
+	\begin{tabularx}{0.88\textwidth}{| r | c | c | >{\tt}X |}	
+		\hline
+		\rowcolor{HeaderGray}
+		\multicolumn{2}{|c|}{Running Time} & Self (ms) & \multicolumn{1}{ c |}{Symbol Name} \\
+		\hline
+		574.0ms & 9.6\% & 3.0 & {gfx::SceneLighting::render()} \\
+		\hline
+
+		356.0ms & 5.9\% & 2.0 & {gfx::SceneLighting::sendLightsToShader()} \\
+		89.0ms & 1.4\% & 1.0 & {gl::glDrawArrays(gl::GLenum, int, int)} \\ 
+		60.0ms & 1.0\% & 0.0 & {gfx::SceneLighting::renderSkybox()} \\
+		20.0ms & 0.3\% & 2.0 & {glm::tmat4x4<float>::inverse} \\[1ex]
+		
+		13.0ms & 0.2\% & 0.0 & {gfx::ShaderProgram::setUniform1f(std::string, float)} \\
+		12.0ms & 0.2\% & 1.0 & {gfx::ShaderProgram::bind()} \\
+		5.0ms & 0.0\% & 1.0 & {gfx::Texture2D::bind()} \\
+		4.0ms & 0.0\% & 0.0 & {gfx::Texture2D::unbind()} \\[1ex]
+		
+		3.0ms & 0.0\% & 0.0 & {gfx::ShaderProgram::setUniformVec(std::string, glm::tvec3<float>)} \\
+		2.0ms & 0.0\% & 0.0 & <Unknown Address> \\
+		2.0ms & 0.0\% & 0.0 & {gfx::ShaderProgram::setUniformMatrix(std::string, glm::tmat4x4<float>)} \\
+		1.0ms & 0.0\% & 0.0 & {gfx::VertexArray::unbind()} \\
+		\hline
+	\end{tabularx}
+	
+	\caption{Stack trace showing computational impact of deferred shading.}
+	\label{tab:booktabs}
+\end{table}
+
+Before deferred shading, lighting was calculated for each \gls{texel}. Average frame rendering times sat at approximately 6.3mS, with rendering and lighting consuming a whopping 93.7\% of that time---the majority of which was spent performing complex lighting calculations over texels that would not even be rendered. Implementing deferred shading single-handedly brought the per-frame rendering time down to approximately 2.9mS.
+
+Of the processing overhead incurred by deferred shading, approximately two thirds go towards sending lighting information (such as position, coefficients, colours, etc.) to the lighting shader. Another 10\% go towards rendering a skybox.
+
+As far as memory use goes, deferred shading is relatively resource hungry. Because of the amount of data that is needed for lighting, the \gls{G Buffer} becomes quite large. Three buffers need to be allocated, at full screen resolution---the albedo and specular buffer, a 32 \gls{bpp} integer buffer; the surface normals, a 64 \gls{bpp} floating point buffer; and the depth buffer, a combined depth and stencil floating point format, requiring 32 \gls{bpp}.
+
+An additional 14MB of memory are required for the \gls{G Buffer}. However, all components of the buffer can be reused after the lighting pass for other steps of the rendering pipeline to reduce the overall memory footprint.
 
 \chapter{High Dynamic Range (HDR) and Bloom}
 One of the biggest problems of computer graphics has traditionally been to approach the dynamic range of the human eye, even though display devices have a limited colour palette they can display. Particularly, the human eye is much better at recovering detail from very bright and very dark areas than a computer display can show, so a large range of brightness values must somehow be mapped onto the handful of nonlinear brightness values displayed by computer monitors: this is exactly what \gls{HDR} does.
@@ -234,9 +299,9 @@ The deferred shading pass outputs colour values into a \gls{floating point} buff
 
 \begin{figure}[!htbp]
   \centering
-  \subfloat[Before]{\includegraphics[width=0.49\textwidth]{images/lighting_out.png}\label{fig:f1}}
+  \subfloat[Before]{\includegraphics[width=0.49\textwidth]{images/lighting_out.png}\label{fig:f21}}
   \hfill
-  \subfloat[After]{\includegraphics[width=0.49\textwidth]{images/bloom_hdr_out.png}\label{fig:f2}}
+  \subfloat[After]{\includegraphics[width=0.49\textwidth]{images/bloom_hdr_out.png}\label{fig:f22}}
   \caption{Before and after \gls{tone mapping}, gamma and white point adjustments.}
 \end{figure}
 
@@ -244,16 +309,16 @@ In addition to a particular \gls{tone mapping} algorithm, the sensitivity of \gl
 
 \begin{figure}[!htbp]
   \centering
-  \subfloat[-3]{\includegraphics[width=0.19\textwidth]{images/exposure/EV_-3.jpg}\label{fig:f1}}
+  \subfloat[-3]{\includegraphics[width=0.19\textwidth]{images/exposure/EV_-3.jpg}\label{fig:f23}}
   \hfill
-  \subfloat[-1.5]{\includegraphics[width=0.19\textwidth]{images/exposure/EV_-1_5.jpg}\label{fig:f2}}
+  \subfloat[-1.5]{\includegraphics[width=0.19\textwidth]{images/exposure/EV_-1_5.jpg}\label{fig:f24}}
   \hfill
-  \subfloat[0]{\includegraphics[width=0.19\textwidth]{images/exposure/EV_0.jpg}\label{fig:f3}}
+  \subfloat[0]{\includegraphics[width=0.19\textwidth]{images/exposure/EV_0.jpg}\label{fig:f25}}
   \hfill
-  \subfloat[1.5]{\includegraphics[width=0.19\textwidth]{images/exposure/EV_1_5.jpg}\label{fig:f4}}
+  \subfloat[1.5]{\includegraphics[width=0.19\textwidth]{images/exposure/EV_1_5.jpg}\label{fig:f26}}
   \hfill
-  \subfloat[3]{\includegraphics[width=0.19\textwidth]{images/exposure/EV_3.jpg}\label{fig:f5}}
-  \caption{Effects of varying exposure values (EV) on a photograph}
+  \subfloat[3]{\includegraphics[width=0.19\textwidth]{images/exposure/EV_3.jpg}\label{fig:f27}}
+  \caption{Effects of varying exposure values (EV) on a photograph.}
 \end{figure}
 
 Overall, HDR can produce a great improvement in visual quality with little additional work. An extra stage of shader processing before output adds minimal overhead, and no additional memory is needed, if a buffer from a previous stage in the rendering pipeline is reused.
@@ -263,42 +328,93 @@ Various additional effects can be achieved simply by varying the exposure value:
 \section{Bloom}
 Blooming simulates the glow that occurs around extremely bright light sources. In conjunction with \gls{HDR}, it is incredibly easy to implement, with little additional overhead.
 
-All fragments that are considered bright---a combined brightness of \texttt{1.0} or above---are copied into an additional buffer. This buffer is half the size as the output screen, saving memory and processing time. A second buffer of identical size is allocated. This buffer is then blurred through several iterations of a Gaussian blur until an adequate blur has been achieved.
-
 \begin{figure}[!htbp]
   \centering
-  \subfloat[Before]{\includegraphics[width=0.49\textwidth]{images/bloom_bright_in.png}\label{fig:f1}}
+  \subfloat[Before]{\includegraphics[width=0.49\textwidth]{images/bloom_bright_in.png}\label{fig:f28}}
   \hfill
-  \subfloat[After]{\includegraphics[width=0.49\textwidth]{images/bloom_pass4.png}\label{fig:f2}}
+  \subfloat[After]{\includegraphics[width=0.49\textwidth]{images/bloom_pass4.png}\label{fig:f29}}
   \caption{Bright input fragments, before and after application of the Gaussian blur.}
 \end{figure}
 
-The Gaussian blur itself consists of a $13 \times 13$ blur kernel, which is approximated by sampling the texture seven times for each \gls{texel}, using bilinear interpolation to get more samples. The blur itself has been decomposed into separate horizontal and vertical components for performance reasons, and is run over a set of two buffers---the original 'bright fragment' input buffer, and the eventual 'output' buffer---a predetermined number of times.
+All fragments that are considered bright---a combined brightness of \texttt{1.0} or above---are copied into an additional buffer. This buffer is half the size as the output screen, saving memory and processing time. A second buffer of identical size is allocated. This buffer is then blurred through several iterations of a Gaussian blur until an adequate blur has been achieved.
 
-Once blurring has been completed, the output buffer is sampled in the \gls{HDR} output shader, multiplied by a coefficient (this determines the strength and effect of the blur on the rest of the scene,) then added to the \gls{HDR} colour.
+The Gaussian blur itself consists of a $13 \times 13$ blur kernel, which is approximated by sampling the texture seven times for each \gls{texel}, using bilinear interpolation to get more samples. The blur itself has been decomposed into separate horizontal and vertical components for performance reasons, and is run over a set of two buffers---the original 'bright fragment' input buffer, and the eventual 'output' buffer---a predetermined number of times.Once blurring has been completed, the output buffer is sampled in the \gls{HDR} output shader, multiplied by a coefficient (this determines the strength and effect of the blur on the rest of the scene,) then added to the \gls{HDR} colour.
 
 \section{End Result}
 By combining both \gls{HDR} and blooming, the lighting in a scene already appears much more realistic, solving the issue of washed out highlights and details that disappear into the shadows. These two render passes require little in the way of additional memory, and their \gls{shader} programs are deceptively simple. Additionally, the \gls{HDR} pass serves as a place for gamma correction to take place. Textures are stored as sRGB, and \gls{OpenGL}'s built-in conversion is disabled. This way, the user can configure the gamma of the application to match their monitor most closely, instead of relying on a hard-coded value in a graphics driver.
 
-When analyzing the testbed's performance with \gls{HDR} and blooming enabled, the little additional overhead incurred by the technique immediately becomes clear. On average, only 713µS of processing time and 1.7MB of video memory were needed to perform all associated calculations, once code had been optimized to minimize \glspl{pipeline stall}.
+\subsection{Performance Impact}
+When analyzing the testbed's performance with \gls{HDR} and blooming enabled, the relatively insignificant additional overhead incurred by the technique immediately becomes clear.
+
+\begin{table}[!htbp]	
+	\centering
+	\footnotesize
+	
+	\definecolor{HeaderGray}{gray}{0.74}
+	\definecolor{Header2Gray}{gray}{0.95}
+		
+	\begin{tabularx}{0.88\textwidth}{| r | c | c | >{\tt}X |}	
+		\hline
+		\rowcolor{HeaderGray}
+		\multicolumn{2}{|c|}{Running Time} & Self (ms) & \multicolumn{1}{ c |}{Symbol Name} \\
+		
+		\hline
+		\rowcolor{Header2Gray}
+		\multicolumn{4}{|c|}{\textbf{HDR}} \\
+		\hline
+		103.0ms & 1.7\% & 0.0 & {gfx::HDRRenderer::render()} \\
+		\hline
+		
+		92.0ms & 1.5\% & 0.0 & {gl::glDrawArrays(gl::GLenum, int, int)} \\
+		5.0ms & 0.0\% & 0.0 & {gfx::ShaderProgram::bind()} \\
+		3.0ms & 0.0\% & 0.0 & {gfx::VertexArray::bind()} \\
+		2.0ms & 0.0\% & 0.0 & {gfx::Texture2D::bind()} \\
+		
+		\hline
+		\rowcolor{Header2Gray}
+		\multicolumn{4}{|c|}{\textbf{Bloom}} \\
+		\hline
+		127.0ms & 2.1\% & 0.0 & {gfx::BloomRenderer::render()} \\
+		\hline
+		
+		103.0ms & 1.7\% & 0.0 & {gl::glDrawArrays(gl::GLenum, int, int)} \\
+		10.0ms & 0.1\% & 1.0 & {gfx::ShaderProgram::bind()} \\
+		10.0ms & 0.1\% & 0.0 & {gfx::ShaderProgram::setUniform1i(std::string, int)} \\
+		2.0ms & 0.0\% & 0.0 & {gfx::ShaderProgram::setUniform1f(std::string, float)} \\[1ex]
+		
+		2.0ms & 0.0\% & 0.0 & {gfx::ShaderProgram::setUniformVec(std::string, glm::tvec3<float>)} \\
+
+
+		\hline
+	\end{tabularx}
+	
+	\caption{Stack trace showing computational impact of HDR and blooming.}
+	\label{tab:booktabs}
+\end{table}
+
+After optimizing the \gls{HDR} code to reduce \glspl{pipeline stall}, on average, 1.7\% of a frame's processing time was taken up by the blurring of highlights (for blooming) and the combination and \gls{tone mapping} of the final output.
+
+In addition, 6.2MB of video memory were needed for buffers. The two quarter resolution buffers for blooming are 48 \gls{bpp} floating point buffers without alpha components, while the input buffer to the HDR process is a 64 \gls{bpp} floating point buffer.
+
+Considering the improvement in visual quality that a properly implemented \gls{HDR} approach can give, the additional performance overhead is almost negligible. However, the difficulty lies in determining and implementing a good \gls{tone mapping} algorithm, that gives an output that looks realistic---not too saturated, but not too bland, either.
+
+Furthermore, a topic of much discussion in the CGI community is blooming. It is extremely difficult to come up with a bloom threshold that is appropriate for every environment that may need to be rendered.
 
 \chapter{Fast Approximate Antialiasing (FXAA)}
-Due to the limited resolution of textures and buffers, as well as the multitude of transformations applied to geometric primitives, it is extremely common for an unprocessed output to exhibit heavy \gls{aliasing}. Most commonly, it will take the form of jagged edges.
+Due to the limited resolution of textures and buffers, as well as the multitude of transformations applied to geometric primitives, it is extremely common for an unprocessed output to exhibit heavy \gls{aliasing}. Most commonly, it will take the form of jagged edges, or strange transitions between colours.
 
 In the past, aliasing was combatted by rendering the entire scene at a much higher resolution---often 2x or 4x larger than the screen---then simply downscaling it, creating a primitive form of supersampling. Later on, similar techniques were applied to \glspl{shader}, when they sampled textures, improving performance somewhat; also known as MSAA. Supersampling works in a similar manner.
 
 What all of these antialiasing algorithms have in common is that they are very computationally expensive. They can double or quadruple the rendering time, while yielding a minimal benefit.
 
 \section{Implementation}
-Processing the output with \gls{FXAA} is relatively straightforward. A buffer is created, into which the final output of all previous stages of the rendering pipeline is stored, instead of going to the window framebuffer.
-
-This 'colour buffer' is then given as an input to the \gls{FXAA} \gls{shader} program, which samples it systematically, detects edges, smoothes them, and outputs a final antialiased output to the window framebuffer\footcite{nvidia-fxaa}.
+Processing the output with \gls{FXAA} is straightforward. A buffer is created, into which the output of all previous stages of the rendering pipeline is stored, instead of going to the window framebuffer. This buffer is then given as an input to the \gls{FXAA} \gls{shader} program, which samples it, detects edges, smoothes them, and outputs a final antialiased output to the window framebuffer\footcite{nvidia-fxaa}.
 
 \begin{figure}[!htbp]
   \centering
-  \subfloat[With FXAA]{\includegraphics[width=0.49\textwidth]{images/fxaa_out@8x.png}\label{fig:f1}}
+  \subfloat[With FXAA]{\includegraphics[width=0.49\textwidth]{images/fxaa_out@8x.png}\label{fig:f31}}
   \hfill
-  \subfloat[Without FXAA]{\includegraphics[width=0.49\textwidth]{images/bloom_hdr_out@8x.png}\label{fig:f2}}
+  \subfloat[Without FXAA]{\includegraphics[width=0.49\textwidth]{images/bloom_hdr_out@8x.png}\label{fig:f32}}
   \caption{A crop from the final output, with and without FXAA. Note the rough edges on on (b).}
 \end{figure}
 
@@ -307,19 +423,95 @@ Because \gls{FXAA} is implemented in a shader\footnote{Example implementation fr
 \section{End Result}
 By utilizing a new algorithm to approximate antialiasing instead of wasting precious computational resources and \gls{memory bandwidth} on traditional algorithms, immense performance gains can be made. In most cases, the quality of \gls{FXAA} is comparable to that of more traditional algorithms: and most of the time, the precise nature of the antialiasing algorithm makes little difference to the user of the program.
 
-Implementing \gls{FXAA} improves the quality of the output significantly, by removing \gls{aliasing} artifacts, with little impact on the performance of the rendering pipeline. On average, running the \gls{FXAA} pass, using the highest 'low dither' preset, an additional 1.13mS of processing time and 4MB of video memory were needed.
+\subsection{Performance Impact}
+Implementing \gls{FXAA} improves the quality of the output significantly, by removing \gls{aliasing} artifacts, with little impact on the performance of the rendering pipeline.
 
-\chapter{Bibliography}
+\begin{table}[!htbp]	
+	\centering
+	\footnotesize
+	
+	\definecolor{HeaderGray}{gray}{0.74}
+		
+	\begin{tabularx}{0.88\textwidth}{| r | c | c | >{\tt}X |}	
+		\hline
+		\rowcolor{HeaderGray}
+		\multicolumn{2}{|c|}{Running Time} & Self (ms) & \multicolumn{1}{ c |}{Symbol Name} \\
+		\hline
+		127.0ms & 2.1\% & 0.0 & {gfx::FXAARenderer::render()} \\
+		\hline
+		
+		101.0ms & 1.6\% & 0.0 & {gl::glDrawArrays(gl::GLenum, int, int)} \\
+		10.0ms & 0.1\% & 2.0 & {gfx::ShaderProgram::setUniform1f(std::string, float)} \\
+		10.0ms & 0.1\% & 0.0 & {gfx::ShaderProgram::setUniform1i(std::string, int)} \\
+		5.0ms & 0.0\% & 0.0 & {gfx::ShaderProgram::bind()} \\[1ex]
+		
+		1.0ms & 0.0\% & 0.0 & {gfx::Texture2D::bind()} \\
+		\hline
+	\end{tabularx}
+	
+	\caption{Stack trace showing computational impact of deferred shading.}
+	\label{tab:booktabs}
+\end{table}
+
+On average, running the \gls{FXAA} pass, using the highest 'low dither' preset specified by the shader, 2.1\% of  processing time is required to execute the \gls{FXAA} process each frame. The majority of this time is spent in the \gls{OpenGL} library, waiting for the GPU to be ready to accept a command, so there is room for further optimization.
+
+In addition, another colour buffer is needed, increasing memory overhead by approximately 4MB. (A simple 24 \gls{bpp} buffer without alpha will suffice for this application, since all \gls{HDR} processing will have already been done on the more complex buffers.)
+
+For the improvement in visual quality---in particular, when using large output displays, and the low impact on performance---the impact of implementing \gls{FXAA} is basically nil.
+
+\chapter{Overall Performance}
+To determine the overall effect on performance of the aforementioned rendering techniques, Apple's Instruments software was used to capture stack traces, and combining those with timing information within the testbed itself.
+
+\begin{table}[!htbp]	
+	\centering
+	\footnotesize
+	
+	\definecolor{HeaderGray}{gray}{0.74}
+		
+	\begin{tabularx}{0.88\textwidth}{| r | c | c | >{\tt}X |}	
+		\hline
+		\rowcolor{HeaderGray}
+		\multicolumn{2}{|c|}{Running Time} & Self (ms) & \multicolumn{1}{ c |}{Symbol Name} \\
+		\hline
+		5956.0ms & 100.0\% & 3.0 & {gfx::StandardRenderer::render()} \\
+		4021.0ms & 67.5\% & 5.0 & {gfx::SceneRenderer::render()} \\
+		574.0ms & 9.6\% & 3.0 & {gfx::SceneLighting::render()} \\
+		531.0ms & 8.9\% & 0.0 & {gfx::BloomRenderer::beforeRender()} \\[1ex]
+		205.0ms & 3.4\% & 0.0 & {gfx::SceneRenderer::beforeRender()} \\
+		127.0ms & 2.1\% & 0.0 & {gfx::BloomRenderer::render()} \\
+		127.0ms & 2.1\% & 0.0 & {gfx::FXAARenderer::render()} \\
+		103.0ms & 1.7\% & 0.0 & {gfx::HDRRenderer::render()} \\[1ex]
+		96.0ms & 1.6\% & 0.0 & {gfx::SceneLighting::beforeRender()} \\
+		57.0ms & 0.9\% & 0.0 & {gfx::SceneRenderer::renderNormally()} \\
+		43.0ms & 0.7\% & 1.0 & {gfx::SceneLighting::bindGBuffer()} \\
+		19.0ms & 0.3\% & 0.0 & {gfx::LevelCamera::updateViewMatrix()} \\[1ex]
+		18.0ms & 0.3\% & 0.0 & <Unknown Address> \\
+		8.0ms & 0.1\% & 0.0 & {gfx::HDRRenderer::bindHDRBuffer()} \\
+		3.0ms & 0.0\% & 0.0 & {gfx::BloomRenderer::bindBloomBuffer()} \\
+		3.0ms & 0.0\% & 1.0 & {gfx::FXAARenderer::beforeRender()} \\[1ex]
+		2.0ms & 0.0\% & 0.0 & {gfx::FrameBuffer::unbindRW()} \\
+		2.0ms & 0.0\% & 0.0 & {gfx::HDRRenderer::beforeRender()} \\
+		2.0ms & 0.0\% & 0.0 & {gfx::LevelCamera::getViewMatrix()} \\
+		1.0ms & 0.0\% & 1.0 & {glm::detail::tmat4x4<float>::tmat4x4()} \\[1ex]
+		1.0ms & 0.0\% & 0.0 & {gfx::LevelCamera::getCameraLookAt()} \\
+		1.0ms & 0.0\% & 0.0 & {gfx::SceneLighting::setFXAA(gfx::FXAARenderer*)} \\
+		1.0ms & 0.0\% & 0.0 & {gfx::LevelCamera::getCameraPosition()} \\
+		1.0ms & 0.0\% & 0.0 & {gfx::SceneRenderer::afterRender()} \\[1ex]
+		1.0ms & 0.0\% & 0.0 & {gfx::FXAARenderer::bindFXAABuffer()} \\
+		1.0ms & 0.0\% & 0.0 & {gfx::SceneLighting::afterRender()} \\
+		\hline
+	\end{tabularx}
+	
+	\caption{Stack trace showing each step of the rendering pipeline, after running it for 60 seconds.}
+	\label{tab:booktabs}
+\end{table}
 
 \begingroup
-	\def\chapter*#1{}
 	\printbibliography[
 		heading=bibintoc,
 		title={Bibliography}
 	]
 \endgroup
-
-Trebilco, Damian. \textit{Light Indexed Deferred Lighting.} Tech. N.p., 17 December 2007. Web. 12 Aug. 2015.
 
 \printglossaries
 
