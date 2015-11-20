@@ -135,7 +135,7 @@
 	\vspace{1.5cm}
 	{\Large\itshape Tristan Seifert\par}
 	\vspace{0.33cm}
-	{\large Word Count: 3175\par}
+	{\large Word Count: 3401\par}
 	\fcolorbox{black}{red}{\Large\itshape {\color{white} \textsc{ Draft Copy }}}
 	\vfill
 	
@@ -462,7 +462,7 @@ For the improvement in visual quality---in particular, when using large output d
 \chapter{Overall Performance}
 To determine the overall effect on performance of the aforementioned rendering techniques, Apple's Instruments software was used to capture stack traces, and combining those with timing information within the testbed itself.
 
-\begin{table}[!htbp]	
+\begin{table}[!htbp]
 	\centering
 	\footnotesize
 	
@@ -505,6 +505,16 @@ To determine the overall effect on performance of the aforementioned rendering t
 	\caption{Stack trace showing each step of the rendering pipeline, after running it for 60 seconds.}
 	\label{tab:booktabs}
 \end{table}
+
+The implementation of these techniques does indeed affect the quality of the output in a positive way. Deferred shading allows for many more lights, giving a more realistic model of how light interacts with objects in the real world. \gls{HDR} and blooming more accurately model the way in which the human eye perceives light, matching its dynamic range, and emulating some of its imperfections. FXAA smoothes the final output, getting rid of unpleasant rendering artifacts without the excessive overhead of 'real' antialiasing.
+
+However, these gains in appearance are not entirely free. While deferred shading reduces processing time required for each \gls{texel} significantly, it requires a significant amount of memory to store the additional data required to later render the lighting effects.
+
+HDR and FXAA require additional memory as well, but provide an incredible increase in the quality of the output with little additional processing time required.
+
+While these basic techniques by themselves do not magically create photorealistic outputs, they are significant steps towards allowing for much more complex shaders, and other processing techniques, that allow true photorealism. For example, dynamic reflections and shadows could be used to enhance the appearance of objects. More complex and detailed textures and normal maps could allow rendered objects to have more detail than the mesh used to render them really does.
+
+Overall, these techniques do contribute quite significantly to the appearance and quality of the final output. While they by themselves do not achieve photorealism, they definitely serve as important foundations for achieving photorealism.
 
 \begingroup
 	\printbibliography[
