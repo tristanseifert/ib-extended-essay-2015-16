@@ -70,6 +70,21 @@
   description={technique in which all models are rendered into an intermediary buffer, called the \gls{G Buffer}, before lighting calculations are applied}
 }
 
+\newglossaryentry{forward shading} {
+  name=forward shading,
+  description={technique in which all lighting calculations are performed when a texel is rendered, regardless of whether it shows up in the final output or not}
+}
+
+\newglossaryentry{multisampling} {
+  name=multisampling,
+  description={sampling the same object several times, possibly at different coordinates, then producing a single output value}
+}
+
+\newglossaryentry{supersampling} {
+  name=supersampling,
+  description={sampling the the same object at a much higher resolution than is needed, in order to produce smoother outputs and combat aliasing artifacts}
+}
+
 \newglossaryentry{G Buffer} {
   name=geometry buffer,
   description={a buffer that stores depth, specular highlights, albedo, and surface normals}

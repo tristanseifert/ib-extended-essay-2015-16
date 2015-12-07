@@ -32,6 +32,14 @@
 \usepackage[justification=centering]{caption}
 \usepackage{comment}
 
+% re-format the "\paragraph" thinger
+\setcounter{secnumdepth}{3} % this could be 4
+
+\titleformat{\paragraph}
+{\normalfont\normalsize\bfseries}{\theparagraph}{1em}{}
+\titlespacing*{\paragraph}
+{0pt}{2ex}{0pt}
+
 % font for listings
 \usepackage[T1]{fontenc}
 \usepackage[scaled]{beramono}
@@ -118,8 +126,10 @@
 
 % bibliography
 \usepackage[sorting=nty,backend=biber,style=verbose-trad1]{biblatex}
-
 \addbibresource{include/bibliography.bib}
+
+% continuous footnote numbering
+\counterwithout{footnote}{chapter}
 
 % begin document
 \begin{document}
@@ -162,7 +172,9 @@ blah
 \section{A Short History of 3D Graphics}
 Ever since computers have been able to output graphics in any form, people have always sought to get better quality out of them. Compared to the blocky, low-resolution graphics of the 1970s, today’s incredibly realistic 3D graphics have come incredibly far. However, this incredible realism comes at a cost: developers must balance precisely the graphical quality they desire with the capabilities of available hardware.
 
-Many techniques have been developed—most in the last decade alone—that simplify natural phenomena so that computers can efficiently approximate them for graphics. The requirements of each project are different, but this paper will look at several techniques commonly to most 3D visualizations (such as videogames,) and analyze what effect they have on the performance of the rendering pipeline, and compare the effects they have on the realism and appearance of the output.
+Many techniques and algorithms have been developed—most all of them in the last decade-and-a-half alone—that simplify complex natural phenomena in such a way that computers can efficiently approximate them, and approach much higher levels of photorealism.
+
+The requirements of each project are different, but this investigation will look at several techniques commonly to most 3D visualizations (such as videogames,) and analyze what effect they have on the performance of the rendering pipeline, and compare the effects they have on the realism and appearance of the output.
 
 \section{Real-time 3D Graphics}
 While computers have been able to produce incredibly photorealistic 3D scenes for decades, it has only been recently that the computing capacity of \glspl{GPU} has caught up and made it possible to do so in realtime: a prime example of which are modern videogames.
@@ -174,7 +186,17 @@ Typically, 60 \gls{fps} is used, as most displays' \glspl{refresh rate} are 60Hz
 However, despite these advances in computing capacity, achieving both photorealism and interactive \glspl{frame rate}---the 'forbidden fruit' of 3D graphics---still remains an incredibly difficult task: a task which requires many clever techniques and trade-offs to 'fake' the way in which objects interact in a 3D space.
 
 \subsection{Limiting Factors}
-When rendering a scene, an immense amount of information needs to be rapidly accessed by the \gls{GPU} to actually produce an output, much of which is heavily processed by \glspl{shader} before it is even displayed. The speed at which this information can be read from memory, known as the \gls{memory bandwidth} is often a limiting factor: a problem known as memory bus saturation. Other times---especially on lower-end \glspl{GPU}---the \glspl{compute unit} are fully utilized and cannot operate any faster, causing the rest of the \gls{graphics pipeline} to stall: an unsurprising fact, considering that many effects rely on incredibly complex vector mathematics.
+To actually process a given scene, and produce visual output, an immense amount of information needs to be rapidly accessed by the \gls{GPU} to produce an output, much of which is heavily processed by \glspl{shader} before it is even displayed.
+
+Factors that limit the performance of a rendering technique can be divided into two groups:
+
+\paragraph{Memory Access}
+The speed at which this information can be read from memory, known as the \gls{memory bandwidth} is often a limiting factor: a problem known as memory bus saturation. This is the most common type of bottleneck encountered in modern 3D graphics programming, due to the nature of the data stored and used.
+
+\paragraph{Algorithm Complexity}
+Other times---particularly on lower-end \glspl{GPU}---the \glspl{compute unit} are fully utilized and cannot operate any faster, i.e. perform any more calculations in a given period of time, causing the rest of the \gls{graphics pipeline} to stall: an unsurprising fact, considering that many effects rely on incredibly complex vector mathematics.
+
+These pipeline stalls are among the most prohibitively expensive (in terms of cycles that could be spent performing calculations) operations a \gls{GPU} can perform. It is therefore in the programmer's best interest to avoid them at all costs.
 
 \section{Analyzing Improvements}
 To analyze the effects of various techniques—\gls{deferred shading}, \gls{HDR}, \gls{bloom}, \gls{shadow mapping}, \gls{ambient occlusion}, and \gls{FXAA}—I developed a testbed with a flexible rendering pipeline that has features similar to those of a modern video game. It is written entirely in standards-compliant \texttt{C99} and \texttt{C++1y}.
@@ -192,7 +214,7 @@ Deferred rendering performs complex lighting calculations \textit{after} all geo
 To achieve all of this, deferred shading works by rendering all texels into a \gls{G Buffer}, then running an additional shading pass to perform lighting calculations all at once.
 
 \section{Geometry Buffer}
-The geometry buffer is a collection of distinct buffers: \gls{specular} highlights (colours of sampled textures) and albedo; surface normals (used in calculating reflections) and fragment depth. Position is required for lighting calculations, but can be derived from depth via some transformations.
+The geometry buffer is a collection of distinct buffers: \gls{specular} highlights (colours of sampled textures) and albedo; surface normals (used in calculating reflections) and fragment depth. World position is also required to perform lighting calculations, but it can be derived from depth information (and world-space transform matrices) via some transformations.
 
 \begin{figure}[!htbp]
   \centering
@@ -204,33 +226,33 @@ The geometry buffer is a collection of distinct buffers: \gls{specular} highligh
   \caption{Components of the G buffer in the testbed's deferred shading implementation.}
 \end{figure}
 
-Rendering of objects in the scene is performed by a simple \gls{shader}, which serves to consolidate its inputs, mixing them as appropriate, and writing them to the G buffer. While this does require a significant amount of additional video memory---particularly since the normal and depth buffers need high precision \glspl{float} to represent their values---it simplifies the lighting processing.
+Rendering of objects in the scene is performed by a comparatively simple \gls{shader}, which serves to consolidate its inputs, mixing them as appropriate, and writing them to the G buffer. While deferred shading does require a significant amount of additional video memory---particularly since the normal and depth buffers need high precision \glspl{float} to accurately represent their values---it simplifies the lighting processing immensely.
 
-Information about lights, encoded as structures, is sent to a shader, which also takes the G buffer as an input. It performs the necessary calculations for each \gls{texel} and outputs it to the next stage in the rendering pipeline.
+Information about lights, encoded in memory as uniform structures, is sent to a shader, which also takes the G buffer as an input. It performs the necessary calculations for each \gls{texel} and outputs it to the next stage in the rendering pipeline.
 
 \section{Lighting Calculations}
-Thanks to the flexibility of performing all lighting at once, many different types of lighting can be implemented. In the testbed, four types of lighting are supported: ambient light, directional lights, point lights, and spotlights. Each of these lights has an associated \gls{specular} and \gls{diffuse} colour.
+Thanks to the flexibility of performing all lighting calculations at the same time, many different types of lighting can be implemented. In the testbed, four types of lighting are supported: ambient light, directional lights, point lights, and spotlights. Each of these lights has an associated \gls{specular} and \gls{diffuse} colour, among other variables that control its appearance and effect on the scene.
 
 \subsection{Ambient Light}
-Ambient light is an average of all non-specific light sources in a scene, with a fixed colour, affecting every \gls{texel} equally.
+Ambient light is an average of all non-specific light sources in a scene, with a fixed colour, affecting every \gls{texel} equally. This is typically used to model the way in which thousands of distinct light sources interact to produce the (approximately) same illumination level throughout the scene.
 
 \subsection{Directional Light}
 Directional lights are an approximation of light sources that are infinitely far away, modeled as a series of parallel light rays. They have a diffuse and specular colour, and a direction that indicates which way the light rays will be cast. Any \gls{texel} that intersects with a light ray from a directional light will be affected by it.
 
-Directional lights are the only lights that will cause shadows to be cast.
+Directional lights are typically the only lights that will cause shadows to be cast, and as thus, there are very few of them in any given scene.
 
 \subsection{Point Light}
-Point lights are similar to directional lights, except they have a position instead of a direction. Light rays are cast in all directions from this center point, and like directional lights, any \gls{texel} in their path will be affected by it. Instead of a constant effect, however, point lights' influence gets weaker the farther the \gls{texel} is from the light source.\footcite{pointlight-attenuate}	
+Point lights are similar to directional lights; but rather than a direction, they instead have a specific position. Light rays are cast in all directions from this center point, and like directional lights, any \gls{texel} that intersects such a light ray will be affected by it. Instead of a constant strength, however, the influence of a point light gets weaker the farther the \gls{texel} is from the light source.\footcite{pointlight-attenuate}	
 
 This attenuation is defined by a constant ($K_c$), a linear ($K_l$) and a quadratic ($K_q$) term, as well as the distance from the light ($d$) and unattenuated intensity ($I$): \begin{equation} F_{att} = \frac{I}{K_c + K_l * d + K_q * d^2} \end{equation}
 
-To get the effect a point light has on a \gls{texel}, its specular and diffuse colours are multiplied by $F_{att}$.
+To get the amount of light contributed by a point light towards the final output colour of a \gls{texel}, its specular and diffuse colours are multiplied by $F_{att}$ before mixing.
 
 \subsection{Spotlight}
-Spotlights are special cases of point lights, with a direction in addition to a position, as well as a radius. They cast light rays as a cone with a given radius, and illuminate everything within. Toward the edge of the circle, the intensity of the light begins to rapidly fall off.
+Spotlights are special cases of point lights, with a direction in addition to a position, as well as a radius. They cast light rays as a cone with a given radius, and illuminate everything that falls within this cone. Toward the edge of the radius, the intensity of the light begins to rapidly decay.
 
 \section{End Result}
-When combining all of these lighting types, a good approximation of the real environment can be created.
+When combining all of these types of lighting, a good approximation of a complex environment with many lights can be created.
 
 \begin{figure}[!htbp]
    \centering
@@ -239,9 +261,11 @@ When combining all of these lighting types, a good approximation of the real env
    \label{fig:f14}
 \end{figure}
 
-But what about particularly bright lights, or really dark ones? The standard approach to rendering them will cause \glspl{texel} illuminated by them to appear as solid bright or dark areas, losing most detail. \gls{HDR} solves that problem, by having the lighting pass output an intermediate, unbounded representation of light intensity.\footcite{trebilco-deferred}
+But what about particularly bright lights, or really dark ones? The standard approach to rendering them will cause \glspl{texel} illuminated by them to appear as solid bright or dark areas, losing most detail that may have been present before. \gls{HDR} solves that problem, by having the lighting pass output an intermediate, unbounded representation of light intensity.\footcite{trebilco-deferred}
 
-A downside of deferred shading is that objects that previously affected light in unique ways are more difficult to implement, since all lighting calculations are in the same shader. Additionally, a significant amount of memory is consumed by the \gls{G Buffer}, so it is not uncommon to reuse components of the \gls{G Buffer} for other purposes.
+A downside of deferred shading is that objects that previously affected light in unique ways are more difficult to implement, since all lighting calculations are in the same shader. For example, it becomes very difficult to simulate the way in which a glass vase might distort objects behind it.
+
+Additionally, a significant amount of memory is consumed by the \gls{G Buffer} as compared with regular \gls{forward shading}, so it is not uncommon to reuse components of the \gls{G Buffer} for other purposes.
 
 \subsection{Performance Impact}
 By far, deferred shading consumes a significant piece of the frame's processing time. Approximately 9.6\% of the frame processing time goes towards deferred shading. However, compared to the tremendous savings over per-pixel shading, this is still a massive reduction in processing time.
@@ -290,7 +314,7 @@ As far as memory use goes, deferred shading is relatively resource hungry. Becau
 An additional 14MB of memory are required for the \gls{G Buffer}. However, all components of the buffer can be reused after the lighting pass for other steps of the rendering pipeline to reduce the overall memory footprint.
 
 \chapter{High Dynamic Range (HDR) and Bloom}
-One of the biggest problems of computer graphics has traditionally been to approach the dynamic range of the human eye, even though display devices have a limited colour palette they can display. Particularly, the human eye is much better at recovering detail from very bright and very dark areas than a computer display can show, so a large range of brightness values must somehow be mapped onto the handful of nonlinear brightness values displayed by computer monitors: this is exactly what \gls{HDR} does.
+One of the biggest problems of computer graphics has traditionally been to approach the dynamic range of the human eye, even though display devices have a limited colour palette they can reliably and accurately display. Particularly, the human eye is much better at recovering detail from very bright and very dark areas than a computer display can show, so a large range of brightness values must somehow be mapped onto the handful of nonlinear brightness values displayed by computer monitors: this is exactly what \gls{HDR} does, via a process called \gls{tone mapping}.
 
 Additionally, due to optical imperfections in lenses (the eye is really one big lens) there often appears bleeding of light from very bright to darker areas. By applying \gls{bloom}, the brightness of a light source can be exaggerated and shown more clearly.
 
@@ -305,7 +329,7 @@ The deferred shading pass outputs colour values into a \gls{floating point} buff
   \caption{Before and after \gls{tone mapping}, gamma and white point adjustments.}
 \end{figure}
 
-In addition to a particular \gls{tone mapping} algorithm, the sensitivity of \gls{HDR} can easily be adjusted via an exposure parameter. This parameter serves as a constant multiplier for the \gls{HDR} input colours before \gls{tone mapping}, and affects the overall brightness of the image: similarly to how changing the exposure settings on a photographic camera will affect the brightness of the photograph.
+In addition to a particular \gls{tone mapping} algorithm, the sensitivity of \gls{HDR} can easily be adjusted via an exposure parameter. This parameter serves as a constant multiplier for the \gls{HDR} input colours before \gls{tone mapping}, and affects the overall brightness of the image: similarly to how changing the exposure settings on a photographic camera will affect the brightness of the resultant image.
 
 \begin{figure}[!htbp]
   \centering
@@ -321,12 +345,12 @@ In addition to a particular \gls{tone mapping} algorithm, the sensitivity of \gl
   \caption{Effects of varying exposure values (EV) on a photograph.}
 \end{figure}
 
-Overall, HDR can produce a great improvement in visual quality with little additional work. An extra stage of shader processing before output adds minimal overhead, and no additional memory is needed, if a buffer from a previous stage in the rendering pipeline is reused.
+Overall, HDR can produce a great improvement in visual quality with little additional work. An extra stage of shader processing before output adds minimal overhead, and no additional memory is needed, if a buffer from a previous stage in the rendering pipeline can be reused.
 
-Various additional effects can be achieved simply by varying the exposure value: for example, a higher exposure value could be used for night-time scenes, and a lower one for day-time scenes. Perhaps even automatic exposure adjustment, where the overall brightness is analyzed, and exposure is slowly changed to maintain a baseline level of brightness, similar to how the human eye functions.
+Various additional effects can be achieved simply by varying the exposure value: for example, a higher exposure value could be used for night-time scenes, and a lower one for day-time scenes. Perhaps even automatic exposure adjustment, where the overall brightness is analyzed, and exposure is slowly changed to maintain a baseline level of brightness, similar to how the human eye functions---temporary blindness when going from a dark scene to a bright scene, or vice-versa, while the eye slowly adjusts to the difference in average brightness.
 
 \section{Bloom}
-Blooming simulates the glow that occurs around extremely bright light sources. In conjunction with \gls{HDR}, it is incredibly easy to implement, with little additional overhead.
+Blooming simulates the glow that occurs around extremely bright light sources. In conjunction with \gls{HDR}, it is incredibly easy to implement, incuring little additional overhead.
 
 \begin{figure}[!htbp]
   \centering
@@ -336,12 +360,14 @@ Blooming simulates the glow that occurs around extremely bright light sources. I
   \caption{Bright input fragments, before and after application of the Gaussian blur.}
 \end{figure}
 
-All fragments that are considered bright---a combined brightness of \texttt{1.0} or above---are copied into an additional buffer. This buffer is half the size as the output screen, saving memory and processing time. A second buffer of identical size is allocated. This buffer is then blurred through several iterations of a Gaussian blur until an adequate blur has been achieved.
+All fragments that are considered bright---a combined brightness of \texttt{1.0} or above---are copied into an additional buffer. This buffer is half the size as the output screen, thus saving memory and processing time. A second buffer of identical size is allocated. This buffer is then blurred through several iterations of a Gaussian blur, until an adequate blur has been achieved.
 
-The Gaussian blur itself consists of a $13 \times 13$ blur kernel, which is approximated by sampling the texture seven times for each \gls{texel}, using bilinear interpolation to get more samples. The blur itself has been decomposed into separate horizontal and vertical components for performance reasons, and is run over a set of two buffers---the original 'bright fragment' input buffer, and the eventual 'output' buffer---a predetermined number of times.Once blurring has been completed, the output buffer is sampled in the \gls{HDR} output shader, multiplied by a coefficient (this determines the strength and effect of the blur on the rest of the scene,) then added to the \gls{HDR} colour.
+The Gaussian blur itself consists of a $13 \times 13$ blur kernel, which is approximated by sampling the texture seven times for each \gls{texel}, using bilinear interpolation to simulate the effect of sampling many more times. The blur itself has been decomposed into separate horizontal and vertical components for performance reasons---a performance impact of $O(n)$ rather than $O(n^2)$---and is run over a set of two buffers: the original 'bright fragment' input buffer, and the eventual 'output' buffer a predetermined number of times. Once blurring has been completed, the output buffer is sampled in the \gls{HDR} output shader, multiplied by a coefficient (this determines the strength and effect of the blur on the rest of the scene,) then added to the calculated \gls{HDR} colour.
 
 \section{End Result}
-By combining both \gls{HDR} and blooming, the lighting in a scene already appears much more realistic, solving the issue of washed out highlights and details that disappear into the shadows. These two render passes require little in the way of additional memory, and their \gls{shader} programs are deceptively simple. Additionally, the \gls{HDR} pass serves as a place for gamma correction to take place. Textures are stored as sRGB, and \gls{OpenGL}'s built-in conversion is disabled. This way, the user can configure the gamma of the application to match their monitor most closely, instead of relying on a hard-coded value in a graphics driver.
+By combining both \gls{HDR} and blooming, the lighting in a scene already appears much more realistic, solving the issue of washed out highlights and details that disappear into the shadows. These two render passes require little in the way of additional memory, and their \gls{shader} programs are relatively simple, compared to various other techniques. 
+
+Additionally, the \gls{HDR} pass serves as a place for gamma correction to take place. Textures are stored as sRGB, and \gls{OpenGL}'s built-in conversion is disabled. This way, the user can configure the gamma of the application to match their monitor most closely, instead of relying on a hard-coded value in a graphics driver, or relying on the operating system to get it right.
 
 \subsection{Performance Impact}
 When analyzing the testbed's performance with \gls{HDR} and blooming enabled, the relatively insignificant additional overhead incurred by the technique immediately becomes clear.
@@ -398,17 +424,17 @@ In addition, 6.2MB of video memory were needed for buffers. The two quarter reso
 
 Considering the improvement in visual quality that a properly implemented \gls{HDR} approach can give, the additional performance overhead is almost negligible. However, the difficulty lies in determining and implementing a good \gls{tone mapping} algorithm, that gives an output that looks realistic---not too saturated, but not too bland, either.
 
-Furthermore, a topic of much discussion in the CGI community is blooming. It is extremely difficult to come up with a bloom threshold that is appropriate for every environment that may need to be rendered.
+Furthermore, a topic of much discussion in the CGI community is blooming. It is extremely difficult to come up with a bloom threshold that is appropriate for every environment that may need to be rendered, so it is often times determined experimentally, and varies from scene to scene.
 
 \chapter{Fast Approximate Antialiasing (FXAA)}
-Due to the limited resolution of textures and buffers, as well as the multitude of transformations applied to geometric primitives, it is extremely common for an unprocessed output to exhibit heavy \gls{aliasing}. Most commonly, it will take the form of jagged edges, or strange transitions between colours.
+Due to the limited resolution of textures and buffers, as well as the multitude of transformations applied to geometric primitives, it is extremely common for an unprocessed output framebuffer to exhibit heavy \gls{aliasing}. Most commonly, it will take the form of jagged edges, or strange and unnatural transitions between colours.
 
-In the past, aliasing was combatted by rendering the entire scene at a much higher resolution---often 2x or 4x larger than the screen---then simply downscaling it, creating a primitive form of supersampling. Later on, similar techniques were applied to \glspl{shader}, when they sampled textures, improving performance somewhat; also known as MSAA. Supersampling works in a similar manner.
+In the past, aliasing was combatted by rendering the entire scene at a much higher resolution---often 2x or 4x larger than the physical display resolution---then simply downscaling it, creating a primitive form of \gls{supersampling}. Later on, similar techniques were applied to \glspl{shader}, causing \gls{multisampling} to take place when they sampled textures, not when they produced their output, improving performance somewhat; also known as MSAA. Supersampling works in a similar manner.
 
 What all of these antialiasing algorithms have in common is that they are very computationally expensive. They can double or quadruple the rendering time, while yielding a minimal benefit.
 
 \section{Implementation}
-Processing the output with \gls{FXAA} is straightforward. A buffer is created, into which the output of all previous stages of the rendering pipeline is stored, instead of going to the window framebuffer. This buffer is then given as an input to the \gls{FXAA} \gls{shader} program, which samples it, detects edges, smoothes them, and outputs a final antialiased output to the window framebuffer\footcite{nvidia-fxaa}.
+Processing the output with \gls{FXAA} is straightforward. A buffer is created, into which the output of all previous stages of the rendering pipeline is stored, instead of directly going to the window framebuffer. This buffer is then set as an input to the \gls{FXAA} \gls{shader} program, which samples it, detects edges, smoothes them, and outputs a final antialiased output to the window framebuffer\footcite{nvidia-fxaa}.
 
 \begin{figure}[!htbp]
   \centering
@@ -418,10 +444,10 @@ Processing the output with \gls{FXAA} is straightforward. A buffer is created, i
   \caption{A crop from the final output, with and without FXAA. Note the rough edges on on (b).}
 \end{figure}
 
-Because \gls{FXAA} is implemented in a shader\footnote{Example implementation from NVIDIA, Version 3.11 by Timothy Lottes}, rather than in hardware, its behavior (such as edge detection sensitivity, smoothing algorithm and sharpness, etc.) can be adjusted on-the-fly. 
+Because \gls{FXAA} is implemented in a shader\footnote{Example implementation from NVIDIA, Version 3.11 by Timothy Lottes}, rather than in hardware, its behavior (such as edge detection sensitivity, smoothing algorithm and sharpness, etc.) can be adjusted on-the-fly by the user to produce the quality of output they desire.
 
 \section{End Result}
-By utilizing a new algorithm to approximate antialiasing instead of wasting precious computational resources and \gls{memory bandwidth} on traditional algorithms, immense performance gains can be made. In most cases, the quality of \gls{FXAA} is comparable to that of more traditional algorithms: and most of the time, the precise nature of the antialiasing algorithm makes little difference to the user of the program.
+By utilizing a new algorithm to approximate antialiasing instead of wasting precious computational resources and \gls{memory bandwidth} on traditional algorithms, immense performance gains can be had. In most cases, the quality of \gls{FXAA} is comparable to that of more traditional antialiasing algorithms: and most of the time, the precise nature of the antialiasing algorithm makes little difference to the user of the program, so long as \gls{aliasing} artifacts are minimized.
 
 \subsection{Performance Impact}
 Implementing \gls{FXAA} improves the quality of the output significantly, by removing \gls{aliasing} artifacts, with little impact on the performance of the rendering pipeline.
@@ -453,11 +479,13 @@ Implementing \gls{FXAA} improves the quality of the output significantly, by rem
 	\label{tab:booktabs}
 \end{table}
 
-On average, running the \gls{FXAA} pass, using the highest 'low dither' preset specified by the shader, 2.1\% of  processing time is required to execute the \gls{FXAA} process each frame. The majority of this time is spent in the \gls{OpenGL} library, waiting for the GPU to be ready to accept a command, so there is room for further optimization.
+On average, running the \gls{FXAA} pass, using the highest 'low dither' preset specified by the shader, 2.1\% of  processing time is required to execute the \gls{FXAA} algorithm each frame. The majority of this time is spent in the \gls{OpenGL} library, waiting for the GPU to be ready to accept a command, so there is room for further optimization.
 
 In addition, another colour buffer is needed, increasing memory overhead by approximately 4MB. (A simple 24 \gls{bpp} buffer without alpha will suffice for this application, since all \gls{HDR} processing will have already been done on the more complex buffers.)
 
 For the improvement in visual quality---in particular, when using large output displays, and the low impact on performance---the impact of implementing \gls{FXAA} is basically nil.
+
+However, it is important to consider the impact that \gls{FXAA} might have on various graphical overlays, such as HUDs, or various user interface elements. Often times, unexpected artifacts are created when \gls{FXAA} works on such overlays, so they would be rendered in another buffer, and then overlaid on the output of the \gls{FXAA} shader.
 
 \chapter{Overall Performance}
 To determine the overall effect on performance of the aforementioned rendering techniques, Apple's Instruments software was used to capture stack traces, and combining those with timing information within the testbed itself.
@@ -506,15 +534,17 @@ To determine the overall effect on performance of the aforementioned rendering t
 	\label{tab:booktabs}
 \end{table}
 
-The implementation of these techniques does indeed affect the quality of the output in a positive way. Deferred shading allows for many more lights, giving a more realistic model of how light interacts with objects in the real world. \gls{HDR} and blooming more accurately model the way in which the human eye perceives light, matching its dynamic range, and emulating some of its imperfections. FXAA smoothes the final output, getting rid of unpleasant rendering artifacts without the excessive overhead of 'real' antialiasing.
+The implementation of these techniques does indeed affect the quality of the output in a positive way. Deferred shading allows for many more lights, giving a more realistic model of how light interacts with objects in the real world. \gls{HDR} and blooming more accurately model the way in which the human eye perceives light, matching its dynamic range, and emulating some of its imperfections. \gls{FXAA} smoothes the final output, getting rid of unpleasant rendering artifacts without the excessive overhead of previous methods antialiasing or \gls{supersampling}.
 
 However, these gains in appearance are not entirely free. While deferred shading reduces processing time required for each \gls{texel} significantly, it requires a significant amount of memory to store the additional data required to later render the lighting effects.
 
-HDR and FXAA require additional memory as well, but provide an incredible increase in the quality of the output with little additional processing time required.
+\gls{HDR} and \gls{FXAA} require additional memory as well, but provide an incredible increase in the quality of the output with little additional processing time required.
 
 While these basic techniques by themselves do not magically create photorealistic outputs, they are significant steps towards allowing for much more complex shaders, and other processing techniques, that allow true photorealism. For example, dynamic reflections and shadows could be used to enhance the appearance of objects. More complex and detailed textures and normal maps could allow rendered objects to have more detail than the mesh used to render them really does.
 
 Overall, these techniques do contribute quite significantly to the appearance and quality of the final output. While they by themselves do not achieve photorealism, they definitely serve as important foundations for achieving photorealism.
+
+An effective base of low-overhead techniques that can be extended at a later time are necessary for more advanced techniques---such as ambient occlusion or 3D shadow mapping---to build on.
 
 \begingroup
 	\printbibliography[
