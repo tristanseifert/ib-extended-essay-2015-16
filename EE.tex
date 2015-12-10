@@ -222,7 +222,7 @@ To maintain a constant environment, all tests will be run on the same machine: a
 \chapter{Deferred Shading}
 Traditionally, rendering pipelines calculated lighting information for every \gls{texel}, whether it would be displayed or not, wasting an immense amount of resources, even if invisible geometry is discarded early through \glspl{depth test}.
 
-Deferred rendering performs complex lighting calculations \textit{after} all geometry has been rendered, freeing up significant resources for other tasks\footcite{gpupro-deferred}. More realistic lighting can be implemented: for example, by using a higher exponent (thus leading to smoother reflections) with the \gls{Blinn-Phong reflection model}.\footcite{ferko-deferred}
+Deferred rendering performs complex lighting calculations \textit{after} all geometry has been rendered, freeing up significant resources for other tasks\footcite{gpupro-deferred}. More realistic lighting can be implemented: for example, by using a higher exponent (thus leading to smoother reflections) with the \gls{Blinn-Phong reflection model}, more accurately simulating the way lights interact.\footcite{ferko-deferred}
 
 To achieve all of this, deferred shading works by rendering all texels into a \gls{G Buffer}, then running an additional shading pass to perform lighting calculations all at once.
 
@@ -244,7 +244,7 @@ Rendering of objects in the scene is performed by a comparatively simple \gls{sh
 Information about lights, encoded in memory as uniform structures, is sent to a shader, which also takes the G buffer as an input. It performs the necessary calculations for each \gls{texel} and outputs it to the next stage in the rendering pipeline.
 
 \section{Lighting Calculations}
-Thanks to the flexibility of performing all lighting calculations at the same time, many different types of lighting can be implemented. In the testbed, four types of lighting are supported: ambient light, directional lights, point lights, and spotlights. Each of these lights has an associated \gls{specular} and \gls{diffuse} colour, among other variables that control its appearance and effect on the scene.
+Thanks to the flexibility afforded by performing all lighting calculations at the same time, many different types of lighting can be implemented. In the testbed, four types of lighting are supported: ambient light, directional lights, point lights, and spotlights. Each of these lights has an associated \gls{specular} and \gls{diffuse} colour, among other variables that control its appearance and effect on the scene.
 
 \subsection{Ambient Light}
 Ambient light is an average of all non-specific light sources in a scene, with a fixed colour, affecting every \gls{texel} equally. This is typically used to model the way in which thousands of distinct light sources interact to produce the (approximately) same illumination level throughout the scene.
@@ -363,7 +363,7 @@ Overall, HDR can produce a great improvement in visual quality with little addit
 Various additional effects can be achieved simply by varying the exposure value: for example, a higher exposure value could be used for night-time scenes, and a lower one for day-time scenes. Perhaps even automatic exposure adjustment, where the overall brightness is analyzed, and exposure is slowly changed to maintain a baseline level of brightness, similar to how the human eye functions---temporary blindness when going from a dark scene to a bright scene, or vice-versa, while the eye slowly adjusts to the difference in average brightness.
 
 \section{Bloom}
-Blooming simulates the glow that occurs around extremely bright light sources. In conjunction with \gls{HDR}, it is incredibly easy to implement, incuring little additional overhead.
+Blooming simulates the glow that occurs around extremely bright light sources. In conjunction with \gls{HDR}, it is incredibly easy to implement, incuring little additional overhead---but significantly increases the photorealism if implemented properly.
 
 \begin{figure}[!htbp]
   \centering
@@ -373,7 +373,7 @@ Blooming simulates the glow that occurs around extremely bright light sources. I
   \caption{Bright input fragments, before and after application of the Gaussian blur.}
 \end{figure}
 
-All fragments that are considered bright---a combined brightness of \texttt{1.0} or above---are copied into an additional buffer. This buffer is half the size as the output screen, thus saving memory and processing time. A second buffer of identical size is allocated. This buffer is then blurred through several iterations of a Gaussian blur, until an adequate blur has been achieved.
+All fragments that are considered bright---a combined brightness of \texttt{1.0} or above---are copied into an additional buffer. This buffer is half the size as the output screen, thus saving memory and processing time. A second buffer of identical size is allocated. This buffer is then blurred through several iterations of a Gaussian blur, until an adequate blur has been achieved.\footcite{gpupro-hdr}
 
 The Gaussian blur itself consists of a $13 \times 13$ blur kernel, which is approximated by sampling the texture seven times for each \gls{texel}, using bilinear interpolation to simulate the effect of sampling many more times. The blur itself has been decomposed into separate horizontal and vertical components for performance reasons---a performance impact of $O(n)$ rather than $O(n^2)$---and is run over a set of two buffers: the original 'bright fragment' input buffer, and the eventual 'output' buffer a predetermined number of times. Once blurring has been completed, the output buffer is sampled in the \gls{HDR} output shader, multiplied by a coefficient (this determines the strength and effect of the blur on the rest of the scene,) then added to the calculated \gls{HDR} colour.
 
@@ -383,8 +383,6 @@ By combining both \gls{HDR} and blooming, the lighting in a scene already appear
 Additionally, the \gls{HDR} pass serves as a place for gamma correction to take place. Textures are stored as sRGB, and \gls{OpenGL}'s built-in conversion is disabled. This way, the user can configure the gamma of the application to match their monitor most closely, instead of relying on a hard-coded value in a graphics driver, or relying on the operating system to get it right.
 
 \subsection{Performance Impact}
-When analyzing the testbed's performance with \gls{HDR} and blooming enabled, the relatively insignificant additional overhead incurred by the technique immediately becomes clear.
-
 \begin{table}[!htbp]	
 	\centering
 	\footnotesize
@@ -430,6 +428,8 @@ When analyzing the testbed's performance with \gls{HDR} and blooming enabled, th
 	\caption{Stack trace showing computational impact of HDR and blooming.}
 	\label{tab:booktabs}
 \end{table}
+
+When analyzing the testbed's performance with \gls{HDR} and blooming enabled, the relatively insignificant additional overhead incurred by the technique immediately becomes clear.
 
 After optimizing the \gls{HDR} code to reduce \glspl{pipeline stall}, on average, 1.7\% of a frame's processing time was taken up by the blurring of highlights (for blooming) and the combination and \gls{tone mapping} of the final output.
 
@@ -560,7 +560,7 @@ Overall, these techniques do contribute quite significantly to the appearance an
 An effective base of low-overhead techniques that can be extended at a later time are necessary for more advanced techniques---such as ambient occlusion or 3D shadow mapping---to build on.
 	
 \begingroup	
-	\setlength\bibitemsep{15pt}
+	\setlength\bibitemsep{18pt}
 
 	\printbibliography[
 		heading=bibintoc,
