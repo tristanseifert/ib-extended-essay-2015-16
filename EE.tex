@@ -31,6 +31,7 @@
 \usepackage{chngcntr}
 \usepackage[justification=centering]{caption}
 \usepackage{comment}
+\usepackage{pdflscape}
 
 % re-format the "\paragraph" thinger
 \setcounter{secnumdepth}{3} % this could be 4
@@ -137,6 +138,7 @@
 % title page
 \begin{titlepage}
 	{\centering\scshape\Huge The IB Extended Essay\par}
+	\vspace{.66cm}
 	
 	% basic IB-mandated information
 	\begin{minipage}[t]{0.48\textwidth}
@@ -144,7 +146,7 @@
 		IB Class of 2016 \\
 		Subject Area: Computer Science \\
 		Word Count: 3730 Words \\
-		Candidate Number: \tt{0108}
+		Candidate Number: \tt{0123}
 	\end{minipage}
 	\hfill
 	\begin{minipage}[t]{0.48\textwidth}
@@ -158,15 +160,13 @@
 	\end{minipage}
 
 	\centering
-	\vspace{2.74cm}
+	\vspace{7.4cm}
 	{\scshape\Large Steps Toward Achieving Photorealism in 3D Graphics\par}
 	{by\par}
 	{\itshape Tristan Seifert\par}
 	\vspace{7.4cm}
 	{\bfseries Research Question:}
-	{What are some common 3D rendering techniques that can be used to achieve photorealism, and their impact on visual quality and performance?\par}
-	\vspace{0.33cm}
-	\fcolorbox{black}{red}{\Large\itshape {\color{white} \textsc{ Draft Copy }}}
+	{What are some 3D rendering techniques that can be used to achieve photorealism, and their impact on visual quality and performance?\par}
 	\vfill
 \end{titlepage}
 
@@ -182,10 +182,10 @@ blah
 
 % introduction to CGI and the problems with photorealism
 \chapter{Introduction}
-\section{A Short History of 3D Graphics}
-Ever since computers have been able to output graphics in any form, people have always sought to get better quality out of them. Compared to the blocky, low-resolution graphics of the 1970s, today’s incredibly realistic 3D graphics have come incredibly far. However, this incredible realism comes at a cost: developers must balance precisely the graphical quality they desire with the capabilities of available hardware.
+\section{A Short Introduction to Computer Graphics}
+Ever since computers have been able to output graphics in any form, people have always sought to get better quality out of them. Compared to the blocky, low-resolution graphics of the 1970s, today’s incredibly realistic 3D graphics have come incredibly far. However, this incredible realism comes at a cost: developers must balance precisely the graphical quality they desire with the capabilities of available hardware. \textit{What are some 3D rendering techniques that can be used to achieve photorealism, and their impact on visual quality and performance?}
 
-Many techniques and algorithms have been developed—most all of them in the last decade-and-a-half alone—that simplify complex natural phenomena in such a way that computers can efficiently approximate them, and approach much higher levels of photorealism.
+Many techniques and algo2rithms have been developed—most all of them in the last decade-and-a-half alone—that simplify complex natural phenomena in such a way that computers can efficiently approximate them, and approach much higher levels of photorealism.
 
 The requirements of each project are different, but this investigation will look at several techniques commonly to most 3D visualizations (such as videogames,) and analyze what effect they have on the performance of the rendering pipeline, and compare the effects they have on the realism and appearance of the output.
 
@@ -212,7 +212,7 @@ Other times---particularly on lower-end \glspl{GPU}---the \glspl{compute unit} a
 These pipeline stalls are among the most prohibitively expensive (in terms of cycles that could be spent performing calculations) operations a \gls{GPU} can perform. It is therefore in the programmer's best interest to avoid them at all costs.
 
 \section{Analyzing Improvements}
-To analyze the effects of various techniques—\gls{deferred shading}, \gls{HDR}, \gls{bloom}, \gls{shadow mapping}, \gls{ambient occlusion}, and \gls{FXAA}—I developed a testbed with a flexible rendering pipeline that has features similar to those of a modern video game. It is written entirely in standards-compliant \texttt{C99} and \texttt{C++1y}.
+To analyze the effects of various techniques—\gls{deferred shading}, \gls{HDR}, \gls{bloom}, \gls{shadow mapping}, \gls{ambient occlusion}, and \gls{FXAA}, a testbed with a flexible rendering pipeline that has features similar to those of a modern video game was developed. It is written entirely in standards-compliant \texttt{C99} and \texttt{C++1y}.
 
 When coupled with debuggers, static and dynamic analyzers, such as Apple's Instruments and \gls{OpenGL} Profiler, very accurate data about the impacts of these techniques on performance can be acquired, down to a breakdown of which line of code takes the longest to execute.
 
@@ -437,10 +437,10 @@ In addition, 6.2MB of video memory were needed for buffers. The two quarter reso
 
 Considering the improvement in visual quality that a properly implemented \gls{HDR} approach can give, the additional performance overhead is almost negligible. However, the difficulty lies in determining and implementing a good \gls{tone mapping} algorithm, that gives an output that looks realistic---not too saturated, but not too bland, either.
 
-Furthermore, a topic of much discussion in the CGI community is blooming. It is extremely difficult to come up with a bloom threshold that is appropriate for every environment that may need to be rendered, so it is often times determined experimentally, and varies from scene to scene.
+Furthermore, a topic of much discussion in the CGI community is blooming. It is extremely difficult to come up with a bloom threshold that is appropriate for every environment where photorealistic rendering is desired, so it is often times determined experimentally, and varies from scene to scene.
 
 \chapter{Fast Approximate Antialiasing (FXAA)}
-Due to the limited resolution of textures and buffers, as well as the multitude of transformations applied to geometric primitives, it is extremely common for an unprocessed output framebuffer to exhibit heavy \gls{aliasing}. Most commonly, it will take the form of jagged edges, or strange and unnatural transitions between colours.
+Due to the limited resolution of textures and other data, as well as the multitude of transformations applied to geometric primitives, it is extremely common for an unprocessed render output to exhibit heavy \gls{aliasing}. Often, \gls{aliasing} takes the form of jagged edges, but it can also manifest itself as strange and unnatural transitions between colours, contributing extremely negatively toward the quality of the rendered image.
 
 In the past, aliasing was combatted by rendering the entire scene at a much higher resolution---often 2x or 4x larger than the physical display resolution---then simply downscaling it, creating a primitive form of \gls{supersampling}. Later on, similar techniques were applied to \glspl{shader}, causing \gls{multisampling} to take place when they sampled textures, not when they produced their output, improving performance somewhat; also known as MSAA. Supersampling works in a similar manner.
 
@@ -558,8 +558,10 @@ While these basic techniques by themselves do not magically create photorealisti
 Overall, these techniques do contribute quite significantly to the appearance and quality of the final output. While they by themselves do not achieve photorealism, they definitely serve as important foundations for achieving photorealism.
 
 An effective base of low-overhead techniques that can be extended at a later time are necessary for more advanced techniques---such as ambient occlusion or 3D shadow mapping---to build on.
+	
+\begingroup	
+	\setlength\bibitemsep{15pt}
 
-\begingroup
 	\printbibliography[
 		heading=bibintoc,
 		title={Bibliography}
@@ -567,5 +569,9 @@ An effective base of low-overhead techniques that can be extended at a later tim
 \endgroup
 
 \printglossaries
+
+\begin{landscape}
+
+\end{landscape}
 
 \end{document}
