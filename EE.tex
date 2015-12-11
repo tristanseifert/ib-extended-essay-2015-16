@@ -43,15 +43,19 @@
 \newcommand*\LSTFont{\Small\ttfamily\SetTracking{encoding=*}{-60}\lsstyle}
 \newcommand*\LSTLineNumberFont{\Tiny\ttfamily\SetTracking{encoding=*}{-60}\lsstyle}
 
+% define GLSL as a language
+\input{include/lang_glsl.tex}
+
 % configure listings (for source code excerpts)
 \definecolor{listinggray}{gray}{0.9}
 \definecolor{listingbackground}{rgb}{0.9,0.9,0.9}
 \definecolor{listingscol}{rgb}{0.6,0.6,0.6}
+
 \lstset{
 	backgroundcolor=\color{listingbackground},
 	tabsize=4,
 	rulecolor=\color{listingscol},
-	language=c,
+	language=c++,
         basicstyle=\LSTFont,
         upquote=true,
 		numbers=left,							% Line nums position
@@ -74,18 +78,32 @@
         stringstyle=\color[rgb]{0.627,0.126,0.941},
 }
 
-% plots
-\usepackage{pgfplots}
-\pgfplotsset{compat=newest}
-
-\definecolor{graph1}{rgb}{0.1, 0.1, 0.1}
-\definecolor{graph2}{rgb}{0.75, 0.75, 0.75}
-\pgfplotscreateplotcyclelist{triangle}{
-	{graph1},
-	{graph2},
+\lstset{
+	backgroundcolor=\color{listingbackground},
+	tabsize=4,
+	rulecolor=\color{listingscol},
+	language=GLSL,
+        basicstyle=\LSTFont,
+        upquote=true,
+		numbers=left,							% Line nums position
+		numberstyle=\LSTLineNumberFont,			% Line-numbers fonts
+		stepnumber=1,                           % Step between two line-numbers
+		numbersep=5pt,                          % How far are line-numbers from code
+        aboveskip={1.5\baselineskip},
+        showstringspaces=true,
+        extendedchars=true,
+        breaklines=true,
+        prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+        frame=single,
+		breaklines=true,                        % Automatic line breaking?
+        showtabs=true,
+        showspaces=false,
+        showstringspaces=false,
+        identifierstyle=\ttfamily,
+        keywordstyle=\color[rgb]{0,0,1},
+        commentstyle=\color[rgb]{0.133,0.545,0.133},
+        stringstyle=\color[rgb]{0.627,0.126,0.941},
 }
-
-\include{include/pie.tex}
 
 % a command to allow text to justify and word-wrap
 \newcommand*\justify{%
@@ -115,7 +133,10 @@
 % spacing of section headers
 \titlespacing\section{0pt}{10pt plus 4pt minus 2pt}{0pt plus 2pt minus 2pt}
 \titlespacing\subsection{0pt}{8pt plus 4pt minus 2pt}{0pt plus 2pt minus 2pt}
-\titlespacing\subsubsection{0pt}{6pt plus 4pt minus 2pt}{-6pt plus 2pt minus 2pt}
+\titlespacing\subsubsection{0pt}{6pt plus 4pt minus 2pt}{0pt plus 2pt minus 2pt}
+
+% the skip after a paragraph pls
+% \setlength{\parskip}{\baselineskip}
 
 % include appendix in ToC
 \usepackage[toc]{appendix}
@@ -168,7 +189,7 @@
 	{\itshape Tristan Seifert\par}
 	\vspace{8.2cm}
 	{\bfseries Research Question:}
-	{What are some 3D rendering techniques that can be used to achieve photorealism, and their impact on visual quality and performance?\par}
+	{\textit{What are some 3D rendering techniques that can be used to achieve photorealism, and their impact on visual quality and performance?}}
 	\vfill
 \end{titlepage}
 
@@ -598,20 +619,45 @@ Soon, the smartphones many carry in their pockets might be able to provide immer
 	\printglossaries
 \endgroup
 
-% code appendix
+
+% appendices
 \begin{appendices}
-\addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
-\makeatletter
-\addtocontents{toc}{%
-  \begingroup
-  \let\protect\l@chapter\protect\l@section
-  \let\protect\l@section\protect\l@subsection
-}
-\makeatother
+	% this makes the ToC nicely formatted for appendices
+	\addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
+	\makeatletter
+	\addtocontents{toc}{
+		\begingroup
+			\let\protect\l@chapter\protect\l@section
+			\let\protect\l@section\protect\l@subsection
+	}
+	\makeatother
+	
+	\chapter{Selected Code Excerpts}
+Several pieces of relevant program code are included for further reference. They are demarcated by their filename, and their type (shader, \texttt{C++} code, etc) is clearly indicated. Some files have additional information, because they may not be referenced elsehwere in the text.
 
-\chapter{Selected Code Excerpts}
-Several pieces of relevant program code are included for further reference. They are demarcated by their filename, and their type (shader, \texttt{C++} code, etc) is clearly indicated.
+	\textbf{shader/lighting.shader}
+	\lstinputlisting[language=GLSL]{include/codes/lighting.shader}
+	
+	\textbf{shader/model.shader}
+	\lstinputlisting[language=GLSL]{include/codes/model.shader}
+	
+	\textbf{shader/hdr.shader}
+	\lstinputlisting[language=GLSL]{include/codes/bloom.shader}
+	
+	\textbf{shader/bloom.shader}
+	\lstinputlisting[language=GLSL]{include/codes/bloom_blur.shader}
+	
+	\textbf{render/SceneLighting.cpp}:
+	Performs the application of the lighting on a \gls{G Buffer} that has previously been rendered into.
+	
+	\lstinputlisting[language=c++]{include/codes/SceneLighting.cpp}
+	
+	\newpage
+	\textbf{render/HDRRenderer.cpp}:
+	Applies the blooming blur, gamma correction, and \gls{HDR} \gls{tone mapping}.
+	
+	\lstinputlisting[language=c++]{include/codes/HDRRenderer.cpp}
 
-\end{appendices}
-
+	\addtocontents{toc}{\endgroup}
+	\end{appendices}
 \end{document}
