@@ -170,7 +170,7 @@
 	\vspace{.66cm}
 	
 	% basic IB-mandated information
-	\begin{minipage}[t]{0.4975\textwidth}
+	\begin{minipage}[t]{0.4\textwidth}
 		Candidate: Tristan Seifert \\
 		IB Class of 2016 \\
 		Subject Area: Computer Science \\
@@ -178,7 +178,7 @@
 		Candidate Number: \tt{123}
 	\end{minipage}
 	\hfill
-	\begin{minipage}[t]{0.4975\textwidth}
+	\begin{minipage}[t]{0.48\textwidth}
 		\begin{flushright}
 			Principal: Laurelyn Arterbury \\
 			IB Coordinator: Stephanie Childress \\
@@ -209,11 +209,11 @@ Primarily, the aim of this investigation is to to answer the research question: 
 
 This investigation makes use of a variety of sources, including various theses and academic papers; case studies of contemporary graphics programs; guides and documentation for 3D graphics \glspl{API}, as well as a multitude books detailing the precise implementation of a variety of graphics techniques, and various places for optimization.
 
-Finally, this paper concludes with an optimistic outlook on the future of photorealism in 3D graphics—a belief corroborated by several reasons. Firstly, the computing power of \glspl{GPU} has been exponentially increasing, allowing for much more complex and accurate algorithms. Secondly, with the advent of a wide gamut of devices, all of which consumers expect to produce immersive 3D experiences---and their extreme range computing power, from small battery powered mobile devices, to extremely high-powered desktop computers with multiple discrete \glspl{GPU}---it becomes extremely important to devise alternate approaches to simplify common rendering techniques to perform well on the weakest of \glspl{GPU}.
+Finally, this paper concludes with an optimistic outlook on the future of photorealism in 3D graphics—a belief corroborated by several facts. First, the computing power of \glspl{GPU} has been exponentially increasing, allowing for much more complex and accurate algorithms. Second, with the advent of a wide gamut of devices, all of which consumers expect to produce immersive 3D experiences---and their extreme range computing power, from small battery powered mobile devices, to extremely high-powered desktop computers with multiple discrete \glspl{GPU}---it becomes extremely important to devise alternate approaches to simplify common rendering techniques to perform well on the weakest \glspl{GPU}.
 
 The future in which photorealistic real-time 3D graphics are achievable is not a distant one: in fact, it may have already arrived and found its place in everyday life, in the form of video games and interactive mobile applications.
 
-\textbf{Word Count: 285 Words}
+\textbf{Word Count: 284 Words}
 
 % table of contents
 \setcounter{tocdepth}{1}
@@ -377,8 +377,6 @@ One of the biggest problems of computer graphics has traditionally been to appro
 Additionally, due to optical imperfections in lenses (the eye is really one big lens) there often appears bleeding of light from very bright to darker areas. By applying \gls{bloom}, the brightness of a light source can be exaggerated and shown more clearly.
 
 \section{Producing HDR Output}
-The deferred shading pass outputs colour values into a \gls{floating point} buffer, allowing for a nearly infinite amount of brightness values to be expressed. The conversion between HDR values and \gls{RGB} values is relatively straightforward, and is defined by a function in a \gls{shader}; also known as \gls{tone mapping}. These values are also adjusted to match a certain \gls{white point}\footcite{hdr}.
-
 \begin{figure}[!htbp]
   \centering
   \subfloat[Before]{\includegraphics[width=0.49\textwidth, frame]{images/lighting_out.png}\label{fig:f21}}
@@ -386,6 +384,8 @@ The deferred shading pass outputs colour values into a \gls{floating point} buff
   \subfloat[After]{\includegraphics[width=0.49\textwidth, frame]{images/bloom_hdr_out.png}\label{fig:f22}}
   \caption{Before and after \gls{tone mapping}, gamma and white point adjustments.}
 \end{figure}
+
+The deferred shading pass outputs colour values into a \gls{floating point} buffer, allowing for a nearly infinite amount of brightness values to be expressed. The conversion between HDR values and \gls{RGB} values is relatively straightforward, and is defined by a function in a \gls{shader}; also known as \gls{tone mapping}. These values are also adjusted to match a certain \gls{white point}\footcite{hdr}.
 
 In addition to a particular \gls{tone mapping} algorithm, the sensitivity of \gls{HDR} can easily be adjusted via an exposure parameter. This parameter serves as a constant multiplier for the \gls{HDR} input colours before \gls{tone mapping}, and affects the overall brightness of the image: similarly to how changing the exposure settings on a photographic camera will affect the brightness of the resultant image.
 
@@ -412,6 +412,8 @@ Various effects can be achieved simply by varying the exposure value: for exampl
 \section{Bloom}
 Bloom simulates the glow that occurs around extremely bright light sources. In conjunction with \gls{HDR}, it is easy to implement, incurring little additional overhead---but significantly increases photorealism, if implemented properly.
 
+All fragments that are considered bright---a combined brightness of \texttt{1.0} or above---are copied into an additional buffer. This buffer is half the size of the output screen, thus saving memory and processing time. This buffer is then blurred through several iterations of a Gaussian blur, until an adequate blur has been achieved.\footcite{gpupro-hdr}
+
 \begin{figure}[!htbp]
   \centering
   \subfloat[Before]{\includegraphics[width=0.49\textwidth, frame]{images/bloom_bright_in.png}\label{fig:f28}}
@@ -419,8 +421,6 @@ Bloom simulates the glow that occurs around extremely bright light sources. In c
   \subfloat[After]{\includegraphics[width=0.49\textwidth, frame]{images/bloom_pass4.png}\label{fig:f29}}
   \caption{Bright input fragments, before and after application of the Gaussian blur.}
 \end{figure}
-
-All fragments that are considered bright---a combined brightness of \texttt{1.0} or above---are copied into an additional buffer. This buffer is half the size of the output screen, thus saving memory and processing time. This buffer is then blurred through several iterations of a Gaussian blur, until an adequate blur has been achieved.\footcite{gpupro-hdr}
 
 The Gaussian blur itself consists of a $13 \times 13$ blur kernel, which is approximated by sampling the texture seven times for each \gls{texel}, using bilinear interpolation to simulate the effect of sampling many more times. It has been decomposed into separate horizontal and vertical components for performance reasons\footcite{intel-blur}---a performance impact of $O(n)$ rather than $O(n^2)$---and is run over a set of two buffers: the original 'bright fragment' input buffer, and the eventual 'output' buffer a predetermined number of times. Once blurring is completed, the output buffer is sampled in the \gls{HDR} output shader, multiplied by a coefficient (determining the strength and effect of the blur on the rest of the scene,) then added to the calculated \gls{HDR} colour.
 
@@ -527,7 +527,7 @@ Implementing \gls{FXAA} improves the quality of the output significantly, by rem
 	\begin{tabularx}{0.88\textwidth}{| r | c | c | >{\tt}X |}	
 		\hline
 		\rowcolor{HeaderGray}
-		\multicolumn{2}{|c|}{Running Time} & Self (ms) & \multicolumn{1}{ c |}{Symbol Name} \\
+		\multicolumn{2}{|c|}{\textbf{Running Time}} & \textbf{Self (ms)} & \multicolumn{1}{ c |}{\textbf{Symbol Name}} \\
 		\hline
 		127.0ms & 2.1\% & 0.0 & {gfx::FXAARenderer::render()} \\
 		\hline
@@ -567,7 +567,7 @@ To determine the overall effect on performance of the aforementioned rendering t
 	\begin{tabularx}{0.88\textwidth}{| r | c | c | >{\tt}X |}	
 		\hline
 		\rowcolor{HeaderGray}
-		\multicolumn{2}{|c|}{Running Time} & Self (ms) & \multicolumn{1}{ c |}{Symbol Name} \\
+		\multicolumn{2}{|c|}{\textbf{Running Time}} & \textbf{Self (ms)} & \multicolumn{1}{ c |}{\textbf{Symbol Name}} \\
 		\hline
 		5956.0ms & 100.0\% & 3.0 & {gfx::StandardRenderer::render()} \\
 		4021.0ms & 67.5\% & 5.0 & {gfx::SceneRenderer::render()} \\
