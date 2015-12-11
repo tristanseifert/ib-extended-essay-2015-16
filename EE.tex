@@ -34,6 +34,13 @@
 % used to draw frames around images
 \usepackage[export]{adjustbox}
 
+% roperly space it
+\renewcommand{\baselinestretch}{1.6}
+\setlength{\parskip}{1em}
+\setlength\parindent{3em}
+
+\usepackage{indentfirst}
+
 % font for listings
 \usepackage[T1]{fontenc}
 \usepackage[scaled]{beramono}
@@ -182,11 +189,11 @@
 	\end{minipage}
 
 	\centering
-	\vspace{8.2cm}
+	\vspace{6.5cm}
 	{\scshape\Large Steps Toward Achieving Photorealism in 3D Graphics\par}
 	{by\par}
 	{\itshape Tristan Seifert\par}
-	\vspace{8.2cm}
+	\vspace{6.5cm}
 	{\bfseries Research Question:}
 	{\textit{What are some 3D rendering techniques that can be used to achieve photorealism, and their impact on visual quality and performance?}}
 	\vfill
@@ -209,6 +216,7 @@ The future in which photorealistic real-time 3D graphics are achievable is not a
 \textbf{Word Count: 285 Words}
 
 % table of contents
+\setcounter{tocdepth}{1}
 \tableofcontents
 
 % introduction to CGI and the problems with photorealism
@@ -259,8 +267,6 @@ Deferred rendering performs complex lighting calculations \textit{after} all geo
 To achieve all of this, deferred shading works by rendering all texels into a \gls{G Buffer}, then running an additional shading pass to perform lighting calculations all at once.\footnote{See Appendix A, \texttt{shader/lighting.shader}.}
 
 \section{Geometry Buffer}
-The geometry buffer is actually a collection of three distinct buffers: \gls{specular} highlights (colours of sampled textures) and albedo; surface normals (used in calculating reflections) and fragment depth. World position is also required to perform lighting calculations, but it can be derived from depth information (and world-space transform matrices) via some vector mathematics.
-
 \begin{figure}[!htbp]
   \centering
   \subfloat[Albedo and \gls{specular}]{\includegraphics[width=0.325\textwidth, frame]{images/lighting_gBuf_albedoSpec.png}\label{fig:f11}}
@@ -270,6 +276,8 @@ The geometry buffer is actually a collection of three distinct buffers: \gls{spe
   \subfloat[Depth]{\includegraphics[width=0.325\textwidth, frame]{images/lighting_gBuf_depth.png}\label{fig:f13}}
   \caption{Components of the G buffer in the testbed's deferred shading implementation.}
 \end{figure}
+
+The geometry buffer is actually a collection of three distinct buffers: \gls{specular} highlights (colours of sampled textures) and albedo; surface normals (used in calculating reflections) and fragment depth. World position is also required to perform lighting calculations, but it can be derived from depth information (and world-space transform matrices) via some vector mathematics.
 
 Rendering of objects in the scene is performed by a comparatively simple \gls{shader}\footnote{See Appendix A, \texttt{shader/model.shader}.}, which serves to consolidate its inputs, mixing them as appropriate, and writing them to the G buffer. While deferred shading does require a significant amount of additional video memory---particularly since the normal and depth buffers need high precision \glspl{float} to accurately represent their values---it simplifies the lighting processing immensely.
 
@@ -315,8 +323,10 @@ Additionally, a significant amount of memory is consumed by the \gls{G Buffer} a
 \subsection{Performance Impact}
 By far, deferred shading consumes a significant piece of the frame's processing time. Approximately 9.6\% of the frame processing time goes towards deferred shading. However, compared to the tremendous savings over per-pixel shading, this is still a massive reduction in processing time.
 
-Before deferred shading, lighting was calculated for each \gls{texel}. Average frame rendering times sat at approximately 6.3mS, with rendering and lighting consuming a whopping 93.7\% of that time---the majority of which was spent performing complex lighting calculations over texels that would not even be rendered. Implementing deferred shading single-handedly brought the per-frame rendering time down to approximately 2.9mS.
+Before deferred shading, lighting was calculated for each \gls{texel}. Average frame rendering times sat at approximately 6.3mS, with rendering and lighting consuming a whopping 93.7\% of that time---the majority of which was spent performing complex lighting calculations over texels that would not even be rendered. Implementing deferred shading single-handedly brought the per-frame rendering time down to 2.9mS.
 
+
+\renewcommand{\baselinestretch}{1}
 \begin{table}[!htbp]	
 	\centering
 	\footnotesize
@@ -326,7 +336,7 @@ Before deferred shading, lighting was calculated for each \gls{texel}. Average f
 	\begin{tabularx}{0.88\textwidth}{| r | c | c | >{\tt}X |}	
 		\hline
 		\rowcolor{HeaderGray}
-		\multicolumn{2}{|c|}{Running Time} & Self (ms) & \multicolumn{1}{ c |}{Symbol Name} \\
+		\multicolumn{2}{|c|}{\textbf{Running Time}} & \textbf{Self (ms)} & \multicolumn{1}{ c |}{\textbf{Symbol Name}} \\
 		\hline
 		574.0ms & 9.6\% & 3.0 & {gfx::SceneLighting::render()} \\
 		\hline
@@ -351,6 +361,7 @@ Before deferred shading, lighting was calculated for each \gls{texel}. Average f
 	\caption{Stack trace showing computational impact of deferred shading.}
 	\label{tab:booktabs}
 \end{table}
+\renewcommand{\baselinestretch}{1.6}
 
 Of the processing overhead incurred by deferred shading, approximately two thirds go towards sending lighting information (such as position, coefficients, colours, etc.) to the lighting shader. Another 10\% go towards rendering a skybox.
 
@@ -421,6 +432,7 @@ Additionally, the \gls{HDR} pass serves as a place for gamma correction to take 
 \subsection{Performance Impact}
 When analyzing the testbed's performance with \gls{HDR} and blooming enabled, the relatively insignificant additional overhead incurred by the technique immediately becomes clear.
 
+\renewcommand{\baselinestretch}{1}
 \begin{table}[!htbp]	
 	\centering
 	\footnotesize
@@ -431,7 +443,7 @@ When analyzing the testbed's performance with \gls{HDR} and blooming enabled, th
 	\begin{tabularx}{0.88\textwidth}{| r | c | c | >{\tt}X |}	
 		\hline
 		\rowcolor{HeaderGray}
-		\multicolumn{2}{|c|}{Running Time} & Self (ms) & \multicolumn{1}{ c |}{Symbol Name} \\
+		\multicolumn{2}{|c|}{\textbf{Running Time}} & \textbf{Self (ms)} & \multicolumn{1}{ c |}{\textbf{Symbol Name}} \\
 		
 		\hline
 		\rowcolor{Header2Gray}
@@ -466,6 +478,7 @@ When analyzing the testbed's performance with \gls{HDR} and blooming enabled, th
 	\caption{Stack trace showing computational impact of HDR and blooming.}
 	\label{tab:booktabs}
 \end{table}
+\renewcommand{\baselinestretch}{1.6}
 
 After optimizing the \gls{HDR} code to reduce \glspl{pipeline stall}, on average, 1.7\% of a frame's processing time was taken up by the blurring of highlights (blooming,) and \gls{tone mapping} of the output.
 
@@ -504,7 +517,8 @@ By utilizing a newly developed algorithm to approximate antialiasing instead of 
 \subsection{Performance Impact}
 Implementing \gls{FXAA} improves the quality of the output significantly, by removing \gls{aliasing} artifacts, with little impact on the performance of the rendering pipeline.
 
-\begin{table}[!htbp]	
+\renewcommand{\baselinestretch}{1}
+\begin{table}[!htbp]
 	\centering
 	\footnotesize
 	
@@ -530,6 +544,7 @@ Implementing \gls{FXAA} improves the quality of the output significantly, by rem
 	\caption{Stack trace showing computational impact of deferred shading.}
 	\label{tab:booktabs}
 \end{table}
+\renewcommand{\baselinestretch}{1.6}
 
 On average, running the \gls{FXAA} pass, using the highest 'low dither' preset specified by the shader, 2.1\% of  processing time is required to execute the \gls{FXAA} algorithm each frame. The majority of this time is spent in the \gls{OpenGL} library, waiting for the GPU to be ready to accept a command, so there is room for further optimization.
 
@@ -542,6 +557,7 @@ However, it is important to consider the impact that \gls{FXAA} might have on va
 \chapter{Overall Performance}
 To determine the overall effect on performance of the aforementioned rendering techniques, Apple's Instruments software was used to capture stack traces, and combining those with timing information within the testbed itself.
 
+\renewcommand{\baselinestretch}{1}
 \begin{table}[!htbp]
 	\centering
 	\footnotesize
@@ -585,6 +601,7 @@ To determine the overall effect on performance of the aforementioned rendering t
 	\caption{Stack trace showing each step of the rendering pipeline, after running it for 60 seconds.}
 	\label{tab:booktabs}
 \end{table}
+\renewcommand{\baselinestretch}{1.6}
 
 The implementation of these techniques does indeed affect the quality of the output in a positive way. Deferred shading allows for many more lights, giving a more realistic model of how light interacts with objects in the real world. \gls{HDR} and blooming more accurately model the way in which the human eye perceives light, matching its dynamic range, and emulating some of its imperfections. \gls{FXAA} smoothes the final output, getting rid of unpleasant rendering artifacts without the excessive overhead of previous methods antialiasing or \gls{supersampling}.
 
